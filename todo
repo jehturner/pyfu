@@ -1,0 +1,23 @@
+- Query pyraf/numarray forum about interpolation artefact and speed of
+  affine_transform
+
+- Make all the DataSet stuff work transparently for simple FITS files
+  as well as SCI extensions of MEF files
+
+- Remove the assumption that the first 2 axes are spatial
+  - Instead figure out which WCS axes are RA and Dec in __init__,
+    based on the CTYPE keywords
+  - If there are no CTYPE keywords or they are LINEAR, assume
+    that RA is the first axis and Dec is the second?
+  - Go through all the DataSet methods and make sure this information
+    is used, instead of the previous assumption
+  - Check whether I have assumed anywhere that the first *array* axes
+    are spatial, or just the first WCS axes
+
+- Read and write data quality arrays, to allow bad pixel rejection and
+  blanking outside the area of the input data
+
+- Implement weighting and rejection
+
+- Implement a copy() method and basic operators for DataSets?
+

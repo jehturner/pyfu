@@ -1,0 +1,4 @@
+inimages,s,l,,,,"List of x,y,lambda datacubes to co-add"
+outimage,s,l,,,,"Output datacube"
+posangle,r,h,INDEF,-180.,180.,"Output position angle (INDEF=auto)"
+#method,s,h,"centroid","centroid|correlate|wcs",,"Offset alignment method?"

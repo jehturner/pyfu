@@ -154,11 +154,9 @@ def ImagePeakCen(image):
     imgmask = image >= bgstats.mean + 2*bgstats.stddev
     src_labels, src_num = ndimage.label(imgmask)
 
-    # Identify the brightest source:
-    peaks = ndimage.maximum(image, src_labels, range(1, src_num+1))
-    if src_num==1:
-        peaks = [peaks]
-    maxsource = peaks.index(max(peaks))+1
+    # Identify the label corresponding to the brightest source:
+    peaks = numpy.array(ndimage.maximum(image, src_labels, range(1, src_num+1)))
+    maxsource = numpy.argmax(peaks)+1   # peaks has maxima for labels 1 onwards
 
     # Centroid on the area of the source > half-max:
     peaksize = peaks[maxsource-1]-bgstats.mean

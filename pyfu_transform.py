@@ -44,7 +44,7 @@ def CentredAffine(input, matrix, offset=0.0, output_type=None, order=3,
     # Transform the data onto the new array:
     output = ndimage.affine_transform(input, matrix,
              offset=offset+cenoff, output_shape=outshape,
-             output_type=output_type, order=order, mode=mode, cval=cval,
+             output=output_type, order=order, mode=mode, cval=cval,
              prefilter=prefilter)
 
     return output

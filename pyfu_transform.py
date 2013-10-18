@@ -7,7 +7,7 @@
 
 import numpy
 import numpy.linalg
-import ndimage
+from scipy import ndimage
 
 # Function to call numpy's affine transformation with the output
 # automatically recentred & resized:

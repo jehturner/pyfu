@@ -5,8 +5,12 @@
 #
 # Version  Feb-May, 2006  JT Initial test version
 #              May, 2011  JT Version with basic support for input DQ
+#              Oct, 2013  JT Fix ndimage import & finally in version control!
 
-import pyfits, numpy, ndimage, astro_ds, imagestats
+import pyfits, numpy
+from scipy import ndimage
+from stsci import imagestats 
+import astro_ds
 #import numdisplay
 
 # Temporary - reload module development changes:

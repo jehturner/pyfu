@@ -9,7 +9,8 @@
 
 import pyfits, numpy
 from scipy import ndimage
-from stsci import imagestats 
+from stsci import imagestats
+from astropy.nddata.convolution import convolve as acnv
 import astro_ds
 #import numdisplay
 
@@ -89,8 +90,10 @@ def pyfalign(images, method):
 
     """Spatially align WCS of IFU datacubes onto a common system"""
 
+    known_methods=['centroid', 'correlate']
+
     # Only one alignment method is implemented for just now:
-    if method!='centroid':
+    if method not in known_methods:
         raise 'pyfalign: invalid alignment method: \'%s\'' % method
 
     # Open a list of input files as PyFITS HDUList objects:
@@ -101,7 +104,7 @@ def pyfalign(images, method):
 
     # Measure a list of offsets from the list of input datasets and
     # update their WCS offset accordingly:
-    if method=='centroid': AdjOffsets(dslist)
+    AdjOffsets(dslist, method)
 
     # Update each input HDUList with the corresponding modified DataSet:
     for hdulist, ds in zip(meflist, dslist):
@@ -114,30 +117,58 @@ def pyfalign(images, method):
 
 
 # Function to derive spatial offsets for a list of datacube arrays:
-def AdjOffsets(dslist):
+def AdjOffsets(dslist, method='centroid'):
     """Measure spatial offsets for a list of >=2D datasets and adjust
        their WCS parameters to put them all on the same co-ordinates"""
 
     # Loop over the input datasets:
     for dataset in dslist:
 
-        # Get an image summed over wavelength and transformed to the
-        # co-ordinate system of the first DataSet:
+        # Get an image summed over wavelength and nominally transformed to
+        # the co-ordinate system of the first DataSet:
         image = dataset.GetTelImage(match=dslist[0])
 
-        # Measure the centroid of the brightest source:
-        pkcen = ImagePeakCen(image)
+        if method=='centroid':
 
-        # (use a more sophisticated algorithm later, but don't assume that
-        # all peaks stay within the field at all pointings)
+            # Measure the centroid of the brightest source:
+            pkcen = ImagePeakCen(image)
 
-        # Transform the peak co-ordinates to RA/Dec:
-        pkoff = dataset.TransformToWCS(pkcen)
-        if dataset==dslist[0]: pkref = pkoff
+            # (use a more sophisticated algorithm later, but don't assume that
+            # all peaks stay within the field at all pointings)
 
-        # Calculate the adjustment needed to match the first dataset's
-        # WCS and update the current WCS accordingly:
-        pkoff = [ref-pk for ref,pk in zip(pkref, pkoff)]
+            # Transform the peak co-ordinates to RA/Dec:
+            pkwcs = dataset.TransformToWCS(pkcen)
+            if dataset==dslist[0]: pkref = pkwcs
+
+        elif method=='correlate':
+
+            # Unlike centroid, this method currently requires that the input
+            # cubes have the same PA & scale, as no transformation is
+            # performed on the pixel data before cross-correlating. It should
+            # work with images of different sizes (untested).
+
+            # Remember the reference image and the World co-ordinates of its
+            # centre, to which we'll apply measured cross-correlation offsets
+            # to get the corrected centre co-ordinates of the other images:
+            if dataset==dslist[0]:
+                refim = image
+                # pkoff = dataset.TransformToWCS([0 for axis in image.shape])
+                pkwcs = dataset.TransformToWCS([0.5*(axlen-1) for axlen \
+                    in image.shape])
+                pkref = pkwcs
+
+            # For subsequent datasets, find the sub-pixel shift from upsampled
+            # cross-correlation, then call TransformToWCS to convert to World
+            # offsets: 
+            else:
+                pixoff = ImageCorrelationShifts(refim, image)
+                pkwcs = dataset.TransformToWCS([0.5*(axlen-1)-axoff for \
+                    axlen, axoff in zip(image.shape, pixoff)])
+
+        # Calculate the adjustment needed to match the first dataset's WCS:
+        pkoff = [ref-pk for ref,pk in zip(pkref, pkwcs)]
+
+        # Update this dataset's WCS to remove the calculated difference:
         dataset.OffsetWCS(pkoff)
 
 # End (function to derive spatial offsets from list of cube arrays)
@@ -168,6 +199,52 @@ def ImagePeakCen(image):
     return objcen
 
 # End (function for measuring brightest peak centroid)
+
+
+# Function for finding image shifts via cross-correlation:
+def ImageCorrelationShifts(image1, image2):
+    """Find the sub-pixel shift between images by cross-correlation"""
+
+    precision = 0.1
+    
+    # Make a copy of each image with the mean subtracted, to avoid any
+    # artificial cross-correlation peak at 0,0.
+    mean1 = imagestats.ImageStats(image1, nclip=0).mean
+    mean2 = imagestats.ImageStats(image2, nclip=0).mean
+    image1 = image1 - mean1
+    image2 = image2 - mean2
+
+    # Upsample each image by x10 along each axis, to get 0.1 pixel precision
+    # from the discrete cross-correlation without fitting the peak:
+    sfactor = 1. / precision
+    image1 = ndimage.zoom(image1, sfactor, order=3)
+    image2 = ndimage.zoom(image2, sfactor, order=3)
+
+    # Cross-correlate by convolving with the complex conjugate of the
+    # reversed reference image:
+    # image2 = image1   # DEBUG
+    product = acnv.convolve_fft(numpy.conjugate(image1[::-1,::-1]), image2)
+
+    # if dataset==dslist[3]:
+    #   pyfits.writeto("im1.fits", image1)
+    #   pyfits.writeto("im2.fits", image2)
+    #   pyfits.writeto("prod.fits", product)
+
+    # For now we just take the maximum value in the cross-correlation
+    # product as the applicable peak. In a test on a single line emission
+    # region with asymmetric structure this works well, with a peak that's
+    # broad but distinguishable to the nearest upsampled pixel:
+    pkoff = numpy.unravel_index(numpy.argmax(product), product.shape)
+
+    # Centre co-ordinates of the output (corresponding to 0 shift):
+    pkref = [0.5*(axlen-1) for axlen in product.shape]
+
+    # Shifts WRT the centre:
+    pkoff = [precision*(ref-pk) for ref,pk in zip(pkref, pkoff)]
+
+    return pkoff
+
+# End (function for finding image shifts via cross-correlation)
 
 
 # Function to co-add datacubes with spatial offsets:

@@ -1,5 +1,5 @@
 images,s,l,,,,"List of x,y,lambda datacubes to co-align"
-method,s,h,"centroid","centroid|",,"Offset alignment method?"
+method,s,h,"centroid","centroid|correlate",,"Offset alignment method?"
 #cenmethod,s,h,"centroid","centroid|correlate|wcs|headeroff",,\
 #  "Offset alignment method?"
 #rotmethod,s,h,"headerpa","headerpa|wcs",,\

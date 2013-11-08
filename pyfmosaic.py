@@ -89,7 +89,7 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False):
         outds.WriteHDU(outhdulist, header=scihdr)
 
     # Write the output file to disk & close it:
-    outhdulist.close(output_verify="ignore")
+    outhdulist.close(output_verify="warn")
 
     # Close the input files:
     astro_ds.CloseMEFList(meflist)

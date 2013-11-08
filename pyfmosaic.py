@@ -223,6 +223,10 @@ def ImageCorrelationShifts(image1, image2):
 
     precision = 0.1   # tenth of a pixel
     
+    # Consider splitting out the mean subtraction & upsampling below so
+    # the reference image doesn't get processed N times. The pyfalign step
+    # isn't that slow compared with pyfmosaic though.
+
     # Make a copy of each image with the mean subtracted, to avoid any
     # artificial cross-correlation peak at 0,0.
     mean1 = imagestats.ImageStats(image1, nclip=0).mean

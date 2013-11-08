@@ -25,7 +25,7 @@ reload(astro_ds)
 # str    outimage = output image name
 # float  posangle = output position angle
 #
-def pyfmosaic(inimages, outimage, posangle=None):
+def pyfmosaic(inimages, outimage, posangle=None, separate=False):
 
     """Mosaic IFU datacubes, based on WCS"""
 
@@ -59,6 +59,16 @@ def pyfmosaic(inimages, outimage, posangle=None):
     outds = astro_ds.DataSet()
     outds.SetGridFrom(dslist, pa=posangle)
 
+    # If the user requested separate output cubes, make a list of as many
+    # additional empty output datasets as needed, based on the first one.
+    # There are some small rounding differences here due to recalculating
+    # things; could change SetGridFrom to avoid this for a single ref.
+    if separate:
+        outds = [outds]
+        for ds in dslist[1:]:
+            outds.append(astro_ds.DataSet())
+            outds[-1].SetGridFrom([outds[0]], pa=posangle)
+
     # Interpolate input cubes onto the output:
     AddCubes(dslist, outds)
 
@@ -69,7 +79,13 @@ def pyfmosaic(inimages, outimage, posangle=None):
     # Append the output DataSet as an extension of the output HDUList:
     # (should we maintain a copy of the full SCI header in each DataSet
     # instead of passing it here?)
-    outds.WriteHDU(outhdulist, header=scihdr)
+    if isinstance(outds, list):
+        n=1
+        for ds in outds:
+            ds.WriteHDU(outhdulist, header=scihdr, extver=n)
+            n+=1
+    else:
+        outds.WriteHDU(outhdulist, header=scihdr)
 
     # Write the output file to disk & close it:
     outhdulist.close(output_verify="warn")
@@ -249,26 +265,43 @@ def ImageCorrelationShifts(image1, image2):
 
 # Function to co-add datacubes with spatial offsets:
 def AddCubes(dslist, outds):
-    """Co-add DataSets with spatial offsets"""
+    """Resample & co-add DataSets with spatial offsets"""
 
-    # Get an empty output array:
-    outcube = outds.GetData()
-    # outDQ = outds.GetDQ()
+    # Make a list of output datasets, which are either the same one repeatedly
+    # or a supplied list if the user wants separate cubes:
+    if isinstance(outds, list):
+        outlist = outds
+        coadd = False
+    else:
+        outlist = []
+        for ds in dslist:
+            outlist.append(outds)
+        coadd = True
+
+    # Use the first or only dataset as a reference for the output grid:
+    outref=outlist[0]
+
+    # Get an empty output array for reference:
+    outcube = outref.GetData()
     outshape = outcube.shape
 
     # Get inverse CD matrix for the output cube:
-    outicd = outds.GetICD()
+    outicd = outref.GetICD()
 
     # Create a mask counting the number of input pixels contributing
     # to each output pixel (maximum 256, no checking!):
-    outmask = numpy.zeros(outshape, dtype='uint8')
+    if coadd:
+        outmask = numpy.zeros(outshape, dtype='uint8')
 
     # Get world co-ords of the output cube origin:
-    outzero = outds.TransformToWCS([0.0 for axis in range(outds.ndim)])
+    outzero = outref.TransformToWCS([0.0 for axis in range(outref.ndim)])
 
     # Loop over the input datasets:
 #    for dataset in dslist[0:1]: # (for testing cube4.fits interpolation)
-    for dataset in dslist:
+    for dataset, thisoutds in zip (dslist, outlist):
+
+        outcube = thisoutds.GetData()   # (cached)
+        # outDQ = thisoutds.GetDQ()
 
         # Get array data from DataSet:
         cube = dataset.GetData()
@@ -291,9 +324,10 @@ def AddCubes(dslist, outds):
 
         # Added 2010 to use input DQ now that gfcube is correcting
         # atmospheric dispersion and propagating DQ for the blank edges.
-        trdq = ndimage.affine_transform(gooddq, trmatrix, troffset,
-               order=1, mode='constant', cval=numpy.nan,
-               output_shape=outshape)
+        if coadd:
+            trdq = ndimage.affine_transform(gooddq, trmatrix, troffset,
+                   order=1, mode='constant', cval=numpy.nan,
+                   output_shape=outshape)
 
         # # Comment old masking, 2010:
         # # Flag blank output pixels, not overlapping this dataset:
@@ -308,8 +342,11 @@ def AddCubes(dslist, outds):
 
         # New masking using transformed input DQ (haven't thought hard
         # about optimizing the weighting WRT the science array):
-        outmask += numpy.where(trdq < 0.5, 0., trdq)
-        outcube += numpy.where(trdq < 0.5, 0., trcube)
+        if coadd:
+            outmask += numpy.where(trdq < 0.5, 0., trdq)
+            outcube += numpy.where(trdq < 0.5, 0., trcube)
+        else:
+            outcube += trcube
 
         # numdisplay.display(outmask[1000,:,:], frame=1)
         # numdisplay.display(outcube[1000,:,:], frame=2)
@@ -319,13 +356,15 @@ def AddCubes(dslist, outds):
     # Save the output mask:
     #outDQ += outmask
 
-    # Replace zeros in the output mask by ones before dividing:
-    outmask = numpy.where(outmask, outmask, 1.)
+    if coadd:
 
-    # Divide co-added output cube by its mask, to convert the sum
-    # of pixels to a mean (otherwise different parts of the cube
-    # would be normalized differently):
-    outcube /= outmask
+        # Replace zeros in the output mask by ones before dividing:
+        outmask = numpy.where(outmask, outmask, 1.)
+
+        # Divide co-added output cube by its mask, to convert the sum
+        # of pixels to a mean (otherwise different parts of the cube
+        # would be normalized differently):
+        outcube /= outmask
 
     # TEST:
 #    numdisplay.display(outds.moddata[1000,:,:], frame=1)

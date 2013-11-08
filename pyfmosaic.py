@@ -159,10 +159,9 @@ def AdjOffsets(dslist, method='centroid'):
 
         elif method=='correlate':
 
-            # Unlike centroid, this method currently requires that the input
-            # cubes have the same PA & scale, as no transformation is
-            # performed on the pixel data before cross-correlating. It should
-            # work with images of different sizes (untested).
+            # This should work even for images with different PAs & scales,
+            # since astro_ds.GetTelImage() does the necessary transformation,
+            # but that hasn't been tested yet.
 
             # Remember the reference image and the World co-ordinates of its
             # centre, to which we'll apply measured cross-correlation offsets

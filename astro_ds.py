@@ -589,11 +589,11 @@ class DataSet:
         # overriding any WCS parameters specified as arguments:
         if pa==None and stdorient==None and scale==None:
 
-            # If no WCS parameters are overriden, just copy the input
+            # If no WCS parameters are overridden, just copy the input
             # CD matrix and its inverse, if present:
             self.cd = ds1.GetCD().copy()
             self.icd = numpy.array(ds1.GetICD(force=False))
-            if self.icd == numpy.array(None): self.icd=None
+            if numpy.array_equal(self.icd, numpy.array(None)): self.icd=None
                 
         else:
             

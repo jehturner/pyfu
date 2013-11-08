@@ -6,6 +6,7 @@
 # Version  Feb-May, 2006  JT Initial test version
 #              May, 2011  JT Version with basic support for input DQ
 #              Oct, 2013  JT Fix ndimage import & finally in version control!
+#              Nov, 2012  JT Option to align cubes by cross-correlation
 
 import pyfits, numpy
 from scipy import ndimage
@@ -221,7 +222,7 @@ def ImagePeakCen(image):
 def ImageCorrelationShifts(image1, image2):
     """Find the sub-pixel shift between images by cross-correlation"""
 
-    precision = 0.1
+    precision = 0.1   # tenth of a pixel
     
     # Make a copy of each image with the mean subtracted, to avoid any
     # artificial cross-correlation peak at 0,0.

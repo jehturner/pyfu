@@ -1,0 +1,2 @@
+inimage,s,l,,,,"x,y,lambda datacube to rebin"
+outimage,s,l,,,,"Output logarithmically-binned datacube"

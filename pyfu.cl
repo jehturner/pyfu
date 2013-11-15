@@ -7,6 +7,7 @@ pyexecute("pyfu$addpath.py",verbose=no)
 package pyfu
 
 pyexecute("pyfu$pyfmosaic_iraf.py",tasknames="pyfmosaic,pyfalign")
+pyexecute("pyfu$pyflogbin_iraf.py",tasknames="pyflogbin")
 #pyexecute("pyfu$pyfscatt_iraf.py",tasknames="pyfscatt")
 
 clbye()

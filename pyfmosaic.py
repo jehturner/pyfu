@@ -1,17 +1,18 @@
-# Copyright(c) 2006 Association of Universities for Research in Astronomy, Inc.
-# and James Turner
+# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
+# by James E.H. Turner
 #
 # 'pyfmosaic' main Python module for mosaicing IFU datacubes
 #
 # Version  Feb-May, 2006  JT Initial test version
 #              May, 2011  JT Version with basic support for input DQ
 #              Oct, 2013  JT Fix ndimage import & finally in version control!
-#              Nov, 2012  JT Option to align cubes by cross-correlation
+#              Nov, 2012  JT Options to align cubes by cross-correlation &
+#                            resample to separate extensions for inspection
 
 import pyfits, numpy
 from scipy import ndimage
 from stsci import imagestats
-from astropy.nddata.convolution import convolve as acnv
+from astropy.convolution import convolve as acnv
 import astro_ds
 #import numdisplay
 

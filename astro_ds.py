@@ -1,11 +1,15 @@
-# Copyright(c) 2006 Association of Universities for Research in Astronomy, Inc.
-# and James Turner
+# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
+# by James E.H. Turner
 #
 # Version  Feb-Apr, 2006  JT Initial test version
+# Version      Nov, 2013  JT Some DQ support, WCS copy bug, distinguish CTYPEs
+#
+# See the accompanying file LICENSE for conditions on copying.
 #
 """
 A module for high-level manipulation of astronomical datasets (especially
 IFU data and Gemini-style MEF files) with STScI's numpy and PyFITS
+(likely to be replaced at some point by Gemini AstroData & AstroPy nddata)
 """
 import math, pyfits, numpy, string, pyfu_transform
 import numpy.linalg, numpy.numarray.mlab
@@ -31,6 +35,8 @@ class DataSet:
     cd    = None
     icd   = None
     crval = None
+    ctype = None
+    dispaxis = None
 
     # Initialize file mapping and modified data array to None until they
     # are updated:
@@ -126,8 +132,10 @@ class DataSet:
                 cdmatrix[dim,wdim] = cdval
         # End (loop over CD matrix)
 
-        # For each WCS dimension, get the reference co-ordinate (CRVAL):
+        # For each WCS dimension, get the reference co-ordinate (CRVAL)
+        # and co-ordinate type (CTYPE):
         rvallist = []
+        typelist = []
         for wdim in range(_ndim, 0, -1):
             keyw = 'CRVAL'+str(wdim)
             try:
@@ -136,7 +144,13 @@ class DataSet:
                 crval = 0.0
                 # print self._key_warning(keyw, scihdrname, crval)
             rvallist.append(crval)
-        # End (loop over CRVAL keywords)
+            keyw = 'CTYPE'+str(wdim)
+            try:
+                ctype = FITSCType(scihdr[keyw])
+            except KeyError:
+                ctype = FITSCType()
+            typelist.append(ctype)
+        # End (loop over CRVAL/CTYPE keywords)
 
         # Store the WCS values as Python tuples or lists, as appropriate:
         # (tuples can be passed directly to some functions eg. for 'shape',
@@ -145,6 +159,16 @@ class DataSet:
         self.cridx  = ridxlist
         self.cd     = cdmatrix
         self.crval  = rvallist
+        self.ctype  = typelist
+
+        # Record which are spatial & spectral axes:
+        self.dispaxis = None
+        for wdim in range(_ndim):
+            if self.ctype[wdim].cclass == 'SPECTRAL':
+                if self.dispaxis is None:
+                    self.dispaxis = wdim
+                else:
+                    raise ValueError('_ReadHdr(): multiple wavelength axes')
 
         # Should we return a warning if any of the defaults were used
         # because keywords could not be found?
@@ -258,6 +282,10 @@ class DataSet:
             # Set world reference value for this axis:
             keyw = 'CRVAL'+str(fdim)
             scihdr.update(keyw, self.crval[adim])
+
+            # Set world co-ordinate type for this axis:
+            keyw = 'CTYPE'+str(fdim)
+            scihdr.update(keyw, str(self.ctype[adim]))
 
         # End (loop over FITS dimensions)
 
@@ -574,16 +602,25 @@ class DataSet:
 
     # Method to set the WCS parameters and array size based on a list of
     # input datasets, optionally overriding specific WCS parameters :
-    def SetGridFrom(self, dslist, pa=None, stdorient=None, scale=None):
+    def SetGridFrom(self, dslist, pa=None, stdorient=None, scale=None,
+        wavtolog=False):
 
         # Like other DataSet methods, this currently assumes (only when
         # overriding WCS parameters) that the first 2 axes are spatial and
-        # there is no rotation between spatial and spectral dimensions
-        # Later use a dictionary to identify which are the spatial axes?
+        # there is no rotation between spatial and spectral dimensions.
+        # Now the spatial axes are identifiable via CTYPE, but I haven't
+        # got around to using that yet (only for DISPAXIS).
 
         # Set output dimensionality based on the first input dataset:
         ds1 = dslist[0]
         ndim = self.ndim = ds1.ndim
+
+        # Copy WCS axis types from the first input dataset, overriding the
+        # wavelength to be logarithmic if so specified:
+        self.ctype = [axct.copy() for axct in ds1.ctype]
+        self.dispaxis = ds1.dispaxis
+        if wavtolog is True and self.dispaxis is not None:
+            self.ctype[self.dispaxis].algorithm = 'LOG'
 
         # Set output CD matrix based on the first input dataset,
         # overriding any WCS parameters specified as arguments:
@@ -594,10 +631,10 @@ class DataSet:
             self.cd = ds1.GetCD().copy()
             self.icd = numpy.array(ds1.GetICD(force=False))
             if numpy.array_equal(self.icd, numpy.array(None)): self.icd=None
-                
+
         else:
             
-            # If at least one WCS parameter is overriden, recalculate
+            # If at least one WCS parameter is overridden, recalculate
             # the CD matrix after deriving the other parameters from the
             # input CD matrix.
 
@@ -630,19 +667,20 @@ class DataSet:
 
             # Figure out which are the spatial dimensions (assume for
             # now that they are the first 2 FITS axes):
+            # - Needs updating to use self.ctype now I've added it
             d1,d2 = ndim-2, ndim-1
 
-            # Loop over the non-spatial diagonal terms of the CD matrix
-            # and enter the appropriate scale values:
-            for dim in range(d1):
-                cdmatrix[dim,dim] = scale[dim]
+            # Set scale for diagonal non-spatial terms of the CD matrix:
+            for dim in range(ndim):
+                if self.ctype[dim].cclass not in ('SPATIAL', 'LINEAR'):
+                    cdmatrix[dim,dim] = scale[dim]
 
             # Calculate the spatial terms of the CD matrix from the scale,
             # PA & sign (remember d1==FITS_axis_2 & d2==FITS_axis_1):
             pa_rad = math.radians(pa)
             cdmatrix[d2,d2] =  sign * scale[d2] * math.cos(pa_rad)
-            cdmatrix[d1,d2] =         scale[d1] * math.sin(pa_rad)
-            cdmatrix[d2,d1] = -sign * scale[d2] * math.sin(pa_rad)
+            cdmatrix[d1,d2] =        -scale[d1] * math.sin(pa_rad)
+            cdmatrix[d2,d1] =  sign * scale[d2] * math.sin(pa_rad)
             cdmatrix[d1,d1] =         scale[d1] * math.cos(pa_rad)
 
             # Store the final CD matrix, setting the inverse matrix to
@@ -650,11 +688,13 @@ class DataSet:
             self.cd = cdmatrix
             self.icd = None
 
-        # End (if WCS parameters are not overriden)
+        # End (if WCS parameters are not overridden)
 
         # Loop over the input datasets and get the corners bounding each
         # dataset, relative to the output system:
-        allcorners = []
+        idxmin = numpy.empty(ndim); idxmin[:] = numpy.nan
+        idxmax = numpy.empty(ndim); idxmax[:] = numpy.nan
+
         for dataset in dslist:
 
             # Calculate the dataset's array corners:
@@ -663,37 +703,53 @@ class DataSet:
             # Transform the corners to world co-ords, common to all datasets:
             corners = [dataset.TransformToWCS(corner) for corner in corners]
 
-            # Transform WCS corners to relative co-ords on the output grid
-            # (with an arbitrary zero point):
+            # Transform WCS corners to "relative" co-ords on the output grid
+            # (with an arbitrary zero point for now):
             corners = [self.TransformFromWCS(corner, relative=True) \
                        for corner in corners]
 
-            # Append this datset's corners to the overall list:
-            allcorners.extend(corners)
+            # Note the output index limits in the relative co-ords:
+            for corner in corners:
+                idxmin = numpy.fmin(idxmin, corner)
+                idxmax = numpy.fmax(idxmax, corner)
 
-        # End (loop over datasets, calculating corners)
+        # End (loop over datasets, calculating corners & limits)
 
         # Calculate the required axis lengths from the min & max corner
-        # co-ordinate along each axis, keeping a copy of the minima:
-        outshape, mindex = [], []
-        for axis in range(ndim):
-            cvals = [corner[axis] for corner in allcorners]
-            mincval = min(cvals)
-            mindex.append(mincval)
-            outshape.append(int(max(cvals)-mincval+1))
+        # co-ordinate along each axis:
+        self.shape = tuple([int(axmax-axmin+1) for axmin,axmax \
+            in zip(idxmin,idxmax)])
 
-        # Store the required output array size:
-        self.shape = tuple(outshape)
+        # Take the centre of the output cube as the reference point and
+        # find its world co-ordinates by reversing the above transformation
+        # to "relative" pixel co-ordinates:
+        self.cridx = [0.5*(ax-1) for ax in self.shape]
+        idxcen = [0.5*(axmin+axmax) for axmin, axmax in zip(idxmin, idxmax)]
+        self.crval = list(self.TransformToWCS(idxcen, relative=True))
 
-        # For the time being, set the reference index to zero along
-        # each axis (might prefer to set it to the middle of the cube
-        # spatially, but avoids assuming which axes are spatial here)
-        self.cridx = [0 for axis in range(ndim)]
+        # If the wavelength scale is logarithmic, override its World reference
+        # point to be the wavelength at which the increment is the same as for
+        # linear binning over the same wavelength range and number of pixels
+        # (see FITS paper III -- NB. IRAF doesn't recognize this properly):
+        if self.ctype[self.dispaxis].algorithm == 'LOG':
+            # First readjust the limits of the range to account for the
+            # rounded-off output grid:
+            wcsmin = self.TransformToWCS([axcen-axhlen for axcen, axhlen \
+                in zip(idxcen, self.cridx)], relative=True)
+            wcsmax = self.TransformToWCS([axcen+axhlen for axcen, axhlen \
+                in zip(idxcen, self.cridx)], relative=True)
+            w1 = wcsmin[self.dispaxis]; w2 = wcsmax[self.dispaxis]
+            dw = self.cd[self.dispaxis,self.dispaxis]
+            # Use dlog(lambda)/dlambda = 1/lambda to find the wavelength:
+            wref = self.crval[self.dispaxis] = dw / \
+                ((math.log(w2)-math.log(w1)) / (self.shape[self.dispaxis]-1))
+            # Invert FITS paper III eq. 5 to find the corresponding pixel:
+            self.cridx[self.dispaxis] = (wref * math.log(wref/w1)) / dw
 
-        # Calculate the WCS zero points at index (0, 0, ... 0) by
-        # transforming the minimum pixel indices in the above relative
-        # output pixel co-ordinates back to WCS co-ordinates:
-        self.crval = list(self.TransformToWCS(mindex, relative=True))
+        # To do: check that the WCS gets set correctly if the co-ordinates are
+        # already logarithmic. The transformation from World co-ordinates to
+        # the output grid probably isn't going to work in that case, which
+        # will cause w1/w2 to be wrong in the section above?
 
     # End (method to set the WCS parameters & array size)
 
@@ -701,6 +757,10 @@ class DataSet:
     # Method to transform array co-ordinates or offsets to world
     # co-ordinates:
     def TransformToWCS(self, coords, relative=False):
+
+        # For logarithmic wavelength co-ordinates, relative transforms are
+        # allowed but they are only accurate within a few pixels of the
+        # reference wavelength (FITS paper III) so their use is discouraged.
 
         # If the co-ordinate tuple is shorter than the CD matrix, match
         # the final rows/columns (ie. the first FITS axes):
@@ -718,7 +778,15 @@ class DataSet:
         # For absolute co-ords, add the WCS zero point (CRVAL):
         if not relative:
             crval = self.crval[d1:d2]
-            coords = [coord+ref for coord,ref in zip(coords,crval)]
+            # Deal with any logarithmic wavelength axis separately:
+            # (assumes exactly 2 spatial axes, after lambda, for now)
+            if d2-d1 > 2 and self.ctype[self.dispaxis].algorithm == 'LOG':
+                refw = self.crval[self.dispaxis]
+                wavl = refw * math.exp(coords[0] / refw)
+                coords = [wavl] + ([coord+ref for coord,ref in \
+                  zip(coords[1:],crval[1:])])
+            else:
+                coords = [coord+ref for coord,ref in zip(coords,crval)]
 
         return tuple(coords)
 
@@ -729,6 +797,10 @@ class DataSet:
     # co-ordinates to array (pixel-1) co-ordinates:
     def TransformFromWCS(self, coords, relative=False):
 
+        # For logarithmic wavelength co-ordinates, relative transforms are
+        # allowed but they are only accurate within a few pixels of the
+        # reference wavelength (FITS paper III) so their use is discouraged.
+
         # If the co-ordinate tuple is shorter than the CD matrix, match
         # the final rows/columns (ie. the first FITS axes):
         d1,d2 = self.ndim-len(coords),self.ndim
@@ -736,7 +808,15 @@ class DataSet:
         # For absolute co-ords, subtract the WCS zero point (CRVAL):
         if not relative:
             crval = self.crval[d1:d2]
-            coords = [coord-ref for coord,ref in zip(coords,crval)]
+            # Deal with any logarithmic wavelength axis separately:
+            # (assumes exactly 2 spatial axes, after lambda, for now)
+            if d2-d1 > 2 and self.ctype[self.dispaxis].algorithm == 'LOG':
+                refw = self.crval[self.dispaxis]
+                woff = refw * math.log(coords[0] / refw)
+                coords = [woff] + ([coord-ref for coord,ref in \
+                  zip(coords[1:],crval[1:])])
+            else:
+                coords = [coord-ref for coord,ref in zip(coords,crval)]
 
         # Multiply the tuple by the inverse CD matrix:
         icd = numpy.array(self.GetICD())[d1:d2,d1:d2]
@@ -942,6 +1022,69 @@ def SCIExtVer(hdulist):
 
 # End (function to return the SCI ext versions for an HDUList)
 
+
+# Class to help parse FITS ctype values:
+class FITSCType:
+    """Simple class representing/parsing a FITS CTYPE value"""
+
+    def __init__(self, ctype='LINEAR'):
+
+        parts = [part.strip() for part in ctype.upper().split('-') if part]
+        nparts = len(parts)
+
+        self.algorithm = None
+
+        if nparts==0:
+            self.coordtype = 'LINEAR'
+
+        elif nparts==1:
+            self.coordtype = parts[0]
+
+        elif nparts==2:
+            self.coordtype = parts[0]
+            self.algorithm = parts[1]
+
+        else:
+            raise ValueError('Invalid CTYPE format: '+ctype)
+
+        # Convert old IRAF wavelength convention to paper III convention:
+        if self.coordtype == 'LAMBDA':
+            self.coordtype = 'AWAV'
+
+    def __repr__(self):
+
+        ctstr =  self.coordtype
+        nchars = len(self.coordtype)
+
+        if self.algorithm is not None:
+            sep = '-' * (5-nchars)
+            ctstr += sep
+            nchars += len(sep)
+
+            ctstr +=  self.algorithm
+            nchars += len(self.algorithm)
+
+        ctstr +=  ' ' * (8-nchars)
+
+        return ctstr
+
+    @property
+    def cclass(self):
+
+        if self.coordtype in ('AWAV', 'WAVE', 'FREQ'):
+            return 'SPECTRAL'
+        elif self.coordtype in ('RA', 'DEC', 'GLON', 'GLAT', 'ELON', 'ELAT',
+          'SLON', 'SLAT'):
+            return 'SPATIAL'
+        else:
+            return None
+
+    def copy(self):
+
+        return FITSCType(str(self))
+
+# End (class FITSCtype)    
+    
 
 # # Function to convert a list of image names to a list of pyifu DataSet
 # # objects (without opening the data arrays, to avoid keeping everything in

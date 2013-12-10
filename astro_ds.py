@@ -758,6 +758,13 @@ class DataSet:
     # co-ordinates:
     def TransformToWCS(self, coords, relative=False):
 
+        # This ensures that subsequent numpy operations do the right thing
+        # for Nxndim arrays as well as tuples or 1D arrays:
+        argtype=type(coords)
+        coords=numpy.vstack(coords)
+        if len(coords) > self.ndim:
+            raise ValueError('TransformToWCS: transposed input coord array?')
+
         # For logarithmic wavelength co-ordinates, relative transforms are
         # allowed but they are only accurate within a few pixels of the
         # reference wavelength (FITS paper III) so their use is discouraged.
@@ -768,8 +775,8 @@ class DataSet:
 
         # For absolute coords, subtract reference coordinate (CRPIX-1):
         if not relative:
-            cridx = self.cridx[d1:d2]
-            coords = [coord-ref for coord,ref in zip(coords,cridx)]
+            cridx = numpy.vstack(self.cridx[d1:d2])
+            coords = numpy.subtract(coords, cridx)
 
         # Multiply the tuple by the CD matrix:
         cd = self.GetCD()[d1:d2,d1:d2]
@@ -777,18 +784,26 @@ class DataSet:
 
         # For absolute co-ords, add the WCS zero point (CRVAL):
         if not relative:
-            crval = self.crval[d1:d2]
+            crval = numpy.vstack(self.crval[d1:d2])
             # Deal with any logarithmic wavelength axis separately:
             # (assumes exactly 2 spatial axes, after lambda, for now)
             if d2-d1 > 2 and self.ctype[self.dispaxis].algorithm == 'LOG':
                 refw = self.crval[self.dispaxis]
-                wavl = refw * math.exp(coords[0] / refw)
+                wavl = refw * numpy.exp(coords[0] / refw)
                 coords = [wavl] + ([coord+ref for coord,ref in \
-                  zip(coords[1:],crval[1:])])
+                  zip(coords[1:],crval[1:])])  # as fast as numpy vstack!
             else:
-                coords = [coord+ref for coord,ref in zip(coords,crval)]
+                coords = numpy.add(coords, crval)
 
-        return tuple(coords)
+        # If the result is 1D, remove the redundant dimension after using
+        # column vectors above:
+        coords=numpy.squeeze(coords)
+
+        # Convert back to the input type if applicable:
+        if argtype is not numpy.ndarray:
+            coords=argtype(coords)
+
+        return coords
 
     # End (method to transform array co-ordinates to world co-ordinates)
 
@@ -796,6 +811,13 @@ class DataSet:
     # Method to transform array co-ordinates or offsets from world
     # co-ordinates to array (pixel-1) co-ordinates:
     def TransformFromWCS(self, coords, relative=False):
+
+        # This ensures that subsequent numpy operations do the right thing
+        # for Nxndim arrays as well as tuples or 1D arrays:
+        argtype=type(coords)
+        coords=numpy.vstack(coords)
+        if len(coords) > self.ndim:
+            raise ValueError('TransformToWCS: transposed input coord array?')
 
         # For logarithmic wavelength co-ordinates, relative transforms are
         # allowed but they are only accurate within a few pixels of the
@@ -807,16 +829,16 @@ class DataSet:
 
         # For absolute co-ords, subtract the WCS zero point (CRVAL):
         if not relative:
-            crval = self.crval[d1:d2]
+            crval = numpy.vstack(self.crval[d1:d2])
             # Deal with any logarithmic wavelength axis separately:
             # (assumes exactly 2 spatial axes, after lambda, for now)
             if d2-d1 > 2 and self.ctype[self.dispaxis].algorithm == 'LOG':
                 refw = self.crval[self.dispaxis]
-                woff = refw * math.log(coords[0] / refw)
+                woff = refw * numpy.log(coords[0] / refw)
                 coords = [woff] + ([coord-ref for coord,ref in \
                   zip(coords[1:],crval[1:])])
             else:
-                coords = [coord-ref for coord,ref in zip(coords,crval)]
+                coords = numpy.subtract(coords, crval)
 
         # Multiply the tuple by the inverse CD matrix:
         icd = numpy.array(self.GetICD())[d1:d2,d1:d2]
@@ -824,10 +846,18 @@ class DataSet:
 
         # For absolute coords, add the reference coordinate (CRPIX-1):
         if not relative:
-            cridx = self.cridx[d1:d2]
-            coords = [coord+ref for coord,ref in zip(coords,cridx)]
+            cridx = numpy.vstack(self.cridx[d1:d2])
+            coords = numpy.add(coords,cridx)
 
-        return tuple(coords)
+        # If the result is 1D, remove the redundant dimension after using
+        # column vectors above:
+        coords=numpy.squeeze(coords)
+
+        # Convert back to the input type if applicable:
+        if argtype is not numpy.ndarray:
+            coords=argtype(coords)
+
+        return coords
         
     # End (method to transform world co-ordinates to array co-ordinates)
     

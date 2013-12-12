@@ -1138,7 +1138,7 @@ class PixMapper:
         # Convert the provided input pixel indices to the equivalent output
         # indices with the same World co-ordinates:
 
-        if self._forward is not None:  # cached?
+        if self._forward is not None and type(coords) is tuple:  # cached?
             return self._quick_transform(coords, invert=False)
         else:
             world = self.inds.TransformToWCS(coords)
@@ -1146,11 +1146,11 @@ class PixMapper:
 
     def invert(self, coords):
 
-        if self._reverse is not None:  # cached?
+        if self._reverse is not None and type(coords) is tuple:  # cached?
             return self._quick_transform(coords, invert=True)
         else:
             world = self.outds.TransformToWCS(coords)
-            return self.outds.TransformFromWCS(world)
+            return self.inds.TransformFromWCS(world)
 
     def _quick_transform(self, coords, invert=False):
         """Look up a forward or reverse transform from the cache"""

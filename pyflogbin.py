@@ -3,11 +3,13 @@
 #
 # 'pyflogbin' Python module for rebinning cubes logarithmically in wavelength
 #
-# Version  Nov, 2012  JT Initial version
+# Version  Nov, 2013  JT Initial version
 
 import pyfits, numpy
-from scipy import ndimage
+import scipy.ndimage.interpolation as ndi
 import astro_ds
+
+import cProfile, pstats, sys
 
 reload(astro_ds)
 
@@ -33,9 +35,10 @@ def pyflogbin(inimage, outimage):
     # Create an empty DataSet for the output and set the WCS and array
     # size, based on the WCS and array sizes of the list of input datasets:
     outds = astro_ds.DataSet()
-    outds.SetGridFrom([inds])
+    outds.SetGridFrom([inds], wavtolog=True)
 
-    # Do stuff here
+    # Specify log wavelength sampling:
+    LogBin(inds, outds)
 
     # Copy the SCI header from the input file as a starting point
     # for the output header:
@@ -50,4 +53,29 @@ def pyflogbin(inimage, outimage):
 
 # End (pyflogbin main Python routine)
 
+
+def LogBin(inds, outds):
+    """Resample a DataSet with logarithmic wavelength binning"""
+
+    incube = inds.GetData()
+    outcube = outds.GetData()
+
+    # Instantiate a mapping object between two datasets and pre-calculate
+    # the reverse transforms so geometric_transform doesn't have to do
+    # everything in a Python loop:
+    mapper = astro_ds.PixMapper(inds, outds)
+    mapper.all_reverse()
+
+    # Debug: profiling code
+    # prof = cProfile.Profile()
+    # prof.enable()
+
+    # Resample the cube:
+    ndi.geometric_transform(incube, mapper.invert, outds.shape, outcube)
+
+    # prof.disable()
+    # ps = pstats.Stats(prof, stream=sys.stdout)
+    # ps.print_stats()
+
+# End (LogBin function to resample with log wavelength binning)
 

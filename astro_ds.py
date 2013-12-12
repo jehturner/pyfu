@@ -1114,7 +1114,187 @@ class FITSCType:
         return FITSCType(str(self))
 
 # End (class FITSCtype)    
-    
+
+
+class PixMapper:
+    """Map pixel co-ords from one DataSet to another via the WCS"""
+
+    # This provides a callable co-ordinate transformation object, eg. for
+    # passing to ndimage.geometric_transform, that can vectorize the necessary
+    # calculations beforehand to avoid doing all the ops in a Python loop.
+
+    def __init__(self, inds, outds):
+        self.inds = inds
+        self.outds = outds
+
+        self._forward=None
+        self._reverse=None
+
+        # This is used later for indexing the dimensions of cached co-ords:
+        # self._idimidx = numpy.arange(self.inds.ndim)[:,numpy.newaxis]
+        # self._odimidx = numpy.arange(self.outds.ndim)[:,numpy.newaxis]
+        # self._idimidx = numpy.arange(self.inds.ndim)
+        # self._odimidx = numpy.arange(self.outds.ndim)
+        self._dimidx = slice(None, None, None)   # same as colon for indexing
+
+    def __call__(self, coords):
+
+        # Convert the provided input pixel indices to the equivalent output
+        # indices with the same World co-ordinates:
+
+        if self._forward is not None:  # cached?
+            return self._quick_transform(coords, invert=False)
+        else:
+            world = self.inds.TransformToWCS(coords)
+            return self.outds.TransformFromWCS(world)
+
+    def invert(self, coords):
+
+        if self._reverse is not None:  # cached?
+            return self._quick_transform(coords, invert=True)
+        else:
+            world = self.outds.TransformToWCS(coords)
+            return self.outds.TransformFromWCS(world)
+
+    def _quick_transform(self, coords, invert=False):
+        """Look up a forward or reverse transform from the cache"""
+
+        # This only accepts a tuple as input, to avoid the overhead of
+        # checking/converting input types when used in a loop. It also
+        # requires all input co-ordinates to be within the bounds of the
+        # array from which co-ordinates are being converted. If you need
+        # to convert an array of multiple co-ordinate vectors, the
+        # DataSet transform methods can do that directly.
+
+        # Another possibility that should be still faster than this would
+        # be to pop co-ordinates off a cache stack, as long as we know they
+        # will be requested in sequence. Leave that for later...
+
+        if invert:
+            cachearr = self._reverse
+        else:
+            cachearr = self._forward
+
+        # Construct index to the relevant co-ordinate vector in the cache
+        # and return the looked-up values:
+        cacheidx = [self._dimidx] + list(coords)
+
+        # The subscript below removes a redundant inner dimension after
+        # indexing the higher-dimensional cached array (NB. numpy.squeeze
+        # is more general but seems to take longer):
+        #pix = numpy.squeeze(cachearr[cacheidx])
+        #return tuple(cachearr[cacheidx][:,0])
+
+        return tuple(cachearr[cacheidx])
+
+    def _transform(self, coords, invert=False):
+        """Apply a forward or reverse transform with optional cacheing"""
+
+        # Deprecated: this deals properly with indexing out of bounds but is
+        # consequently not significantly faster than simply calling the
+        # DataSet transform methods in a Python loop, so I've written the
+        # much simpler version above with no type checking etc. and this
+        # remains here largely as an example of how one would do it.
+
+        # Use cached values if they exist and we were passed integer indices:
+        argtype=type(coords)
+        coarr = numpy.vstack(coords)  # convert to column vector(s)
+        use_cache=False
+        if self._reverse is not None:
+            if issubclass(coarr.dtype.type, numpy.integer):
+                use_cache=True
+
+        # Which dataset are we mapping from?
+        if invert:
+            fromds = self.outds
+            tods = self.inds
+            cachearr = self._reverse
+        else:
+            fromds = self.inds
+            tods = self.outds
+            cachearr = self._forward
+
+        # Establish which co-ordinates are within the bounds of the output
+        # array (and therefore have cached values):
+        if use_cache:
+
+            inbounds = (coarr[0] >= 0) & (coarr[0] < fromds.shape[0])
+            for dim in range(fromds.ndim)[1:]:
+                inbounds = inbounds & \
+                    ((coarr[dim] >= 0) & (coarr[dim] < fromds.shape[dim]))
+
+            # Make arrays that index the in/out-of-bounds points in coords:
+            dimidx = numpy.arange(fromds.ndim)[:,numpy.newaxis]
+            cachepoints = [dimidx, numpy.where(inbounds)]
+            # Make array from (subset of) coords that indexes the cache:
+            cacheidx = [dimidx] + list(coarr[cachepoints])
+
+            # Look up the relevant cached pixel indices:
+            cachepix = cachearr[cacheidx]
+
+            # If everything we need is cached, return the looked-up values
+            # directly without further ado:
+            if numpy.all(inbounds):
+                # Remove any redundant dimension:
+                cachepix = numpy.squeeze(cachepix)
+                # Convert back to input type if applicable:
+                if argtype is not numpy.ndarray:
+                    cachepix = argtype(cachepix)
+                return cachepix
+
+            # If we need to calculate some out-of-bounds values, construct
+            # the subarray of co-ordinates to convert:
+            else:
+                outbounds = numpy.logical_not(inbounds)
+                calcpoints = [dimidx, numpy.where(outbounds)]
+                calcidx = coarr[calcpoints]
+                outcoords = numpy.zeros(coarr.shape)
+
+        else:
+            calcidx = coarr
+
+        # Convert the provided output pixel indices to the equivalent input
+        # indices with the same World co-ordinates :
+        world = fromds.TransformToWCS(calcidx)
+        pix = tods.TransformFromWCS(world)
+
+        # If some of the values were cached, reassemble them along with the
+        # calculated values into the original input ordering:
+        if use_cache:
+            outcoords[cachepoints] = cachepix
+            outcoords[calcpoints] = pix
+        else:
+            outcoords = pix
+
+        # Remove any redundant dimension:
+        outcoords = numpy.squeeze(outcoords)
+        # Convert back to input type if applicable:
+        if argtype is not numpy.ndarray:
+            outcoords = argtype(outcoords)
+
+        return outcoords
+
+    def all_forward(self):
+        # Get an N x ndim array of indices for each pixel, to feed to the
+        # transform method:
+        inidx = numpy.indices(self.inds.shape, dtype=numpy.int16).\
+            reshape((self.inds.ndim,-1))
+        world = self.inds.TransformToWCS(inidx)
+        outidx = self.outds.TransformFromWCS(world)
+        self._forward = outidx.reshape([self.inds.ndim]+list(self.inds.shape))
+
+    def all_reverse(self):
+        # Get an N x ndim array of indices for each pixel:
+        outidx = numpy.indices(self.outds.shape, dtype=numpy.int16).\
+            reshape((self.outds.ndim,-1))
+        # outidx = numpy.indices(self.outds.shape, dtype=numpy.int16)
+        world = self.outds.TransformToWCS(outidx)
+        inidx = self.inds.TransformFromWCS(world)
+        # Put the results back to the array's original dimensionality:
+        self._reverse = inidx.reshape([self.outds.ndim]+list(self.outds.shape))
+
+# End (object to transform pixel co-ords between DataSets)
+
 
 # # Function to convert a list of image names to a list of pyifu DataSet
 # # objects (without opening the data arrays, to avoid keeping everything in

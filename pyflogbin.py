@@ -66,16 +66,8 @@ def LogBin(inds, outds):
     mapper = astro_ds.PixMapper(inds, outds)
     mapper.all_reverse()
 
-    # Debug: profiling code
-    # prof = cProfile.Profile()
-    # prof.enable()
-
     # Resample the cube:
     ndi.geometric_transform(incube, mapper.invert, outds.shape, outcube)
-
-    # prof.disable()
-    # ps = pstats.Stats(prof, stream=sys.stdout)
-    # ps.print_stats()
 
 # End (LogBin function to resample with log wavelength binning)
 

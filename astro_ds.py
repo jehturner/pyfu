@@ -1131,10 +1131,6 @@ class PixMapper:
         self._reverse=None
 
         # This is used later for indexing the dimensions of cached co-ords:
-        # self._idimidx = numpy.arange(self.inds.ndim)[:,numpy.newaxis]
-        # self._odimidx = numpy.arange(self.outds.ndim)[:,numpy.newaxis]
-        # self._idimidx = numpy.arange(self.inds.ndim)
-        # self._odimidx = numpy.arange(self.outds.ndim)
         self._dimidx = slice(None, None, None)   # same as colon for indexing
 
     def __call__(self, coords):
@@ -1163,8 +1159,8 @@ class PixMapper:
         # checking/converting input types when used in a loop. It also
         # requires all input co-ordinates to be within the bounds of the
         # array from which co-ordinates are being converted. If you need
-        # to convert an array of multiple co-ordinate vectors, the
-        # DataSet transform methods can do that directly.
+        # to convert an array of multiple co-ordinate vectors, don't use
+        # the cache and the DataSet transform methods will do it directly.
 
         # Another possibility that should be still faster than this would
         # be to pop co-ordinates off a cache stack, as long as we know they
@@ -1178,13 +1174,6 @@ class PixMapper:
         # Construct index to the relevant co-ordinate vector in the cache
         # and return the looked-up values:
         cacheidx = [self._dimidx] + list(coords)
-
-        # The subscript below removes a redundant inner dimension after
-        # indexing the higher-dimensional cached array (NB. numpy.squeeze
-        # is more general but seems to take longer):
-        #pix = numpy.squeeze(cachearr[cacheidx])
-        #return tuple(cachearr[cacheidx][:,0])
-
         return tuple(cachearr[cacheidx])
 
     def _transform(self, coords, invert=False):

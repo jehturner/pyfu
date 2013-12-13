@@ -9,9 +9,10 @@
 #              Nov, 2012  JT Options to align cubes by cross-correlation &
 #                            resample to separate extensions for inspection
 
-import pyfits, numpy
+import numpy, pyfits
 from scipy import ndimage
 from stsci import imagestats
+# from astropy.io import fits as pyfits
 from astropy.convolution import convolve as acnv
 import astro_ds
 #import numdisplay

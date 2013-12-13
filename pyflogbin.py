@@ -38,7 +38,7 @@ def pyflogbin(inimage, outimage):
     outds.SetGridFrom([inds], wavtolog=True)
 
     # Specify log wavelength sampling:
-    LogBin(inds, outds)
+    ReBinWavelength(inds, outds)
 
     # Copy the SCI header from the input file as a starting point
     # for the output header:
@@ -54,8 +54,8 @@ def pyflogbin(inimage, outimage):
 # End (pyflogbin main Python routine)
 
 
-def LogBin(inds, outds):
-    """Resample a DataSet with logarithmic wavelength binning"""
+def ReBinWavelength(inds, outds):
+    """Resample a DataSet with a previously-defined output wavelength binning"""
 
     incube = inds.GetData()
     outcube = outds.GetData()
@@ -68,6 +68,30 @@ def LogBin(inds, outds):
 
     # Resample the cube:
     ndi.geometric_transform(incube, mapper.invert, outds.shape, outcube)
+
+    # Correct flux for the new binning, since ndimage resamples flux density:
+    # (currently this step assumes the same wavelength binning over all
+    # spatial pixels; it also assumes that the wavelength was linear to begin
+    # with and will apply the correction erroneously if not):
+
+    # Evaluate wavelength at each slice first:
+    # (transform method currently doesn't accept co-ords along only the
+    # wavelength axis)
+    nw = outds.shape[outds.dispaxis]
+    idxarr = numpy.zeros((outds.ndim, nw), dtype=numpy.int16)
+    idxarr[outds.dispaxis] = numpy.arange(nw)
+    warr = outds.TransformToWCS(idxarr)[outds.dispaxis]
+
+    # Get ratio of each increment WRT the reference increment (which is
+    # the same as for the equivalent linear case):
+    ratio = outds.GetWCSIncrement(waxis=outds.dispaxis, coord=warr) / \
+        outds.GetWCSIncrement(waxis=outds.dispaxis)
+    
+    # Broadcast up the dimensionality of the ratio array to that of the
+    # science array and take their product:
+    idx = [numpy.newaxis for axis in range(outds.ndim)]
+    idx[outds.dispaxis] = slice(None, None, None)  # like [:,newaxis,newaxis]
+    outcube *= ratio[idx]
 
 # End (LogBin function to resample with log wavelength binning)
 

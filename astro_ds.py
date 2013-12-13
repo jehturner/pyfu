@@ -808,6 +808,36 @@ class DataSet:
     # End (method to transform array co-ordinates to world co-ordinates)
 
 
+    # Method to evaluate the WCS increments with respect to a specified array
+    # axis at specified World co-ord (currently useful for log binning):
+    def GetWCSIncrement(self, waxis=0, paxis=None, coord=None):
+        """Get the pixel increment for a specified World co-ordinate"""
+
+        # Perhaps support looking up the whole CD matrix later but for now
+        # stick to a single axis (for which there's actually a use case).
+
+        # Default to using the same array axis as WCS axis:
+        if paxis is None:
+            paxis = waxis
+
+        delt = self.GetCD()[paxis,waxis]
+
+        # Calculate increment for log binning at a wavelength other than the
+        # reference wavelength, if applicable:
+        if coord is not None and self.ctype[waxis].cclass == 'SPECTRAL' \
+            and self.ctype[waxis].algorithm == 'LOG':
+
+            # Get log increment, using dlogw/dw = 1/w
+            dlogw = delt / self.crval[waxis]
+
+            # Convert wavelength to delta wavelength in the same way:
+            delt = dlogw * coord
+
+        return delt
+
+    # End (method to get WCS increment for a specified axis)
+
+
     # Method to transform array co-ordinates or offsets from world
     # co-ordinates to array (pixel-1) co-ordinates:
     def TransformFromWCS(self, coords, relative=False):

@@ -67,7 +67,8 @@ def ReBinWavelength(inds, outds):
     mapper.all_reverse()
 
     # Resample the cube:
-    ndi.geometric_transform(incube, mapper.invert, outds.shape, outcube)
+    ndi.geometric_transform(incube, mapper.invert, outds.shape, outcube,
+        order=3, mode='constant', cval=0.0, prefilter=True)
 
     # Correct flux for the new binning, since ndimage resamples flux density:
     # (currently this step assumes the same wavelength binning over all

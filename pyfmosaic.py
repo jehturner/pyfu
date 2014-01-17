@@ -13,7 +13,7 @@ import numpy, pyfits
 from scipy import ndimage
 from stsci import imagestats
 # from astropy.io import fits as pyfits
-from astropy.convolution import convolve as acnv
+import astropy.convolution as acnv
 import astro_ds
 #import numdisplay
 

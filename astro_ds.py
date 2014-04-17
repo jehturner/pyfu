@@ -1,8 +1,9 @@
-# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.
 # by James E.H. Turner
 #
 # Version  Feb-Apr, 2006  JT Initial test version
 # Version      Nov, 2013  JT Some DQ support, WCS copy bug, distinguish CTYPEs
+# Version      Apr, 2014  JT Variance support
 #
 # See the accompanying file LICENSE for conditions on copying.
 #
@@ -44,6 +45,7 @@ class DataSet:
     _filename = None
     _extver   = None
     _newdata  = None
+    _newvar   = None
     _newDQ    = None
 
     # Cop out and implement DQ etc. later on :-). Actually partly done now.
@@ -72,7 +74,8 @@ class DataSet:
             except KeyError:
                 raise KeyError('extension '+scihdrname+' not found')
 
-            # Parse WCS etc from the SCI extension header:
+            # Parse WCS etc from the SCI extension header (any VAR & DQ
+            # are assumed to match it):
             self._ReadHdr(scihdr)
 
         # Error for now if hdulist is not an HDUList (but maybe support
@@ -177,7 +180,7 @@ class DataSet:
 
 
     # Method to map a DataSet in memory to an HDUList extension:
-    def WriteHDU(self, hdulist, header=None, extver=1):
+    def WriteHDU(self, hdulist, header=None, varheader=None, extver=1):
 
     # For the time being, don't keep a record of the mapping to the output
     # HDUList because it may not be written to disk yet and therefore can't
@@ -198,60 +201,75 @@ class DataSet:
 #             self._filename = hdulist[0]._file.name
 #         self._extver = extver
 
+        # Write the SCI extension:
+        self._UpdateExt(sciname, extver, header=header, hdulist=hdulist)
+
+        # Write the VAR extension if there is one:
+        if self.GetVar(create=False) is not None:
+            self._UpdateExt(varname, extver, header=varheader, hdulist=hdulist)
+
+    # End (method to write a modified dataset)
+
+    
+    # Method to update or append a named extension in a supplied hdulist:
+    def _UpdateExt(self, name, ver, header=None, hdulist=None):
+
+        if name == sciname:
+            getdata = self.GetData
+            newdata = self._newdata
+        elif name == varname:
+            getdata = self.GetVar
+            newdata = self._newvar
+        else:
+            raise ValueError('unsupported extension name %s' % name)
+
         # When we append a new extension to an HDUList, PyFITS doesn't set
         # the _extver attribute, so we can't subsequently look up HDUs by
         # extension name & version. Thus we can't reliably check whether the
         # extver we want to update/append already exists by its name & number.
         # Loop over the existing HDUs & check the names instead:
-        scicount = 0
-        scihdu = None
-        for hdu in hdulist:
-            if isinstance(hdu, pyfits.ImageHDU) and hdu.name==sciname:
-                scicount+=1
+        count = 0
+        hdu = None
+        for thishdu in hdulist:
+            if isinstance(thishdu, pyfits.ImageHDU) and thishdu.name == name:
+                count += 1
                 try:
                     # In case extver has been set in the header but not
                     # the HDU and there are skipped extvers or what not,
                     # synchronize the count with the header EXTVER:
-                    sciver = hdu.header['extver']
-                    scicount = sciver
+                    ver = thishdu.header['extver']
+                    count = ver
                 except KeyError:
                     pass
-                if scicount==extver:
-                    scihdu = hdu
+                if count == ver:
+                    hdu = thishdu
                     break
 
-        # If the output extver doesn't already exist, append it to the
+        # If the output extver doesn't already exist, append it to the provided
         # HDUList as a new extension:
-        if scihdu==None:
-
-            scihdu = pyfits.ImageHDU(header=header, name=sciname, \
-                         data=self.GetData())
-            
-            hdulist.append(scihdu)
+        if hdu is None:
+            hdu = pyfits.ImageHDU(header=header, name=name, data=getdata())
+            hdulist.append(hdu)
 
         # If the output extver exists already, just replace the header
         # and data (may not work if old dimensionality doesn't match?):
         else:
-
-            # Use the specified header (may be the same as previously):
-            scihdu.header = header
-
-            # scihdu.data = self._newdata  # this only worked by accident
-            
-            # Update the data array unless the DataSet is already mapped
-            # from this same HDU and the data haven't changed:
-            if self._newdata is not None \
-               or self._hdulist[sciname, self._extver] is not scihdu:
-                scihdu.data = self.GetData()
+            # Use the specified header and update the data array unless the
+            # DataSet is already mapped from this same HDU & hasn't changed:
+            if header is not None:
+                hdu.header = header
+            if newdata is not None or \
+              self._hdulist[name, self._extver] is not hdu:
+                hdu.data = getdata()
 
         # Ensure the extension version is correct in the header:
-        scihdu.header.update('extver', extver)
-                
-        # Update SCI header with the WCS etc:
-        self._UpdateHdr(scihdu.header)
+        hdu.header.update('extver', ver)
 
-    # End (method to write a modified dataset)
-    
+        # Update header with the WCS etc:
+        self._UpdateHdr(hdu.header)
+
+    # End (method to update/append a named extension)
+
 
     # Method to update an HDU header with the DataSet WCS etc.
     def _UpdateHdr(self, scihdr):
@@ -364,6 +382,61 @@ class DataSet:
         return darr
         
     # End (method GetData)
+
+
+    # Method to return a copy of the DataSet's variance array (more-or-less
+    # a cut-and-paste of the above until I have time to clean it up):
+    def GetVar(self, create=True):
+
+        # If the DataSet already has a data array from a previous call,
+        # return that:
+        if not (self._newvar is None):
+            return self._newvar
+
+        # If the DataSet is newly created and the dimensions have been set,
+        # return an empty array of the correct size:
+        if self._hdulist is None:
+
+            # Just return None if asked not to create an empty VAR array:
+            if not create:
+                return None
+
+            # If the array dimensions haven't yet been specified for the 
+            # new dataset, return an error (we don't have any information
+            # here from which to determine the required size):
+            if self.shape==None:
+                raise RuntimeError('GetVar(): can\'t create a new array' \
+                                   + 'before setting its dimensions')
+
+            # Get a new array full of zeros and save a reference to it, so
+            # we can save changes to it later:
+            self._newvar = darr = numpy.zeros(self.shape, 'float32')
+
+        # If the DataSet is from an existing file, read the array data:
+        else:
+
+            # Get the data array from the HDUList (then reset it to being
+            # lazy in the HDUList so it doesn't persist in memory longer
+            # than needed by the calling program):
+            try:
+                darr = numpy.float32(self._hdulist[varname, self._extver].data)
+                del self._hdulist[varname, self._extver].data
+
+            # Return an error if the data can't be read because there is
+            # no image in the extension:
+            except IndexError:
+                scihdrname = self._filename+'['+varname+','+ \
+                             str(self._extver)+']'
+                raise IndexError('no data in '+scihdrname)
+
+            # Return None if there's no VAR for the relevant extver:
+            except KeyError:
+                return None
+
+        # Return the read in or newly created data array:
+        return darr
+        
+    # End (method GetVar)
 
 
     # Method to return a copy of the DataSet's DQ array. This is more of a

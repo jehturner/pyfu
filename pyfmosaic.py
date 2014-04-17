@@ -1,4 +1,4 @@
-# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.
 # by James E.H. Turner
 #
 # 'pyfmosaic' main Python module for mosaicing IFU datacubes
@@ -6,8 +6,10 @@
 # Version  Feb-May, 2006  JT Initial test version
 #              May, 2011  JT Version with basic support for input DQ
 #              Oct, 2013  JT Fix ndimage import & finally in version control!
-#              Nov, 2012  JT Options to align cubes by cross-correlation &
+#              Nov, 2013  JT Options to align cubes by cross-correlation &
 #                            resample to separate extensions for inspection
+#              Jan, 2014  JT Fix imports for AstroPy 0.3
+#              Mar, 2014  JT Add variance propagation
 
 import numpy, pyfits
 from scipy import ndimage
@@ -28,7 +30,7 @@ reload(astro_ds)
 # str    outimage = output image name
 # float  posangle = output position angle
 #
-def pyfmosaic(inimages, outimage, posangle=None, separate=False):
+def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
 
     """Mosaic IFU datacubes, based on WCS"""
 
@@ -73,11 +75,15 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False):
             outds[-1].SetGridFrom([outds[0]], pa=posangle)
 
     # Interpolate input cubes onto the output:
-    AddCubes(dslist, outds)
+    AddCubes(dslist, outds, propvar=propvar)
 
     # Copy the SCI header from the first input file as a starting point
     # for the output header:
     scihdr = meflist[0]['sci',1].header.copy()
+    try:
+        varhdr = meflist[0]['var',1].header.copy()
+    except KeyError:
+        varhdr = None
 
     # Append the output DataSet as an extension of the output HDUList:
     # (should we maintain a copy of the full SCI header in each DataSet
@@ -85,10 +91,10 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False):
     if isinstance(outds, list):
         n=1
         for ds in outds:
-            ds.WriteHDU(outhdulist, header=scihdr, extver=n)
+            ds.WriteHDU(outhdulist, header=scihdr, varheader=varhdr, extver=n)
             n+=1
     else:
-        outds.WriteHDU(outhdulist, header=scihdr)
+        outds.WriteHDU(outhdulist, header=scihdr, varheader=varhdr)
 
     # Write the output file to disk & close it:
     outhdulist.close(output_verify="warn")
@@ -270,7 +276,7 @@ def ImageCorrelationShifts(image1, image2):
 
 
 # Function to co-add datacubes with spatial offsets:
-def AddCubes(dslist, outds):
+def AddCubes(dslist, outds, propvar=False):
     """Resample & co-add DataSets with spatial offsets"""
 
     # Make a list of output datasets, which are either the same one repeatedly
@@ -283,6 +289,12 @@ def AddCubes(dslist, outds):
         for ds in dslist:
             outlist.append(outds)
         coadd = True
+
+    # If asked to propagate variance, do so if it's actually available for
+    # all the inputs:
+    if propvar:
+        propvar = all([dataset.GetVar(create=False) is not None \
+                       for dataset in dslist])
 
     # Use the first or only dataset as a reference for the output grid:
     outref=outlist[0]
@@ -303,15 +315,17 @@ def AddCubes(dslist, outds):
     outzero = outref.TransformToWCS([0.0 for axis in range(outref.ndim)])
 
     # Loop over the input datasets:
-#    for dataset in dslist[0:1]: # (for testing cube4.fits interpolation)
     for dataset, thisoutds in zip (dslist, outlist):
 
+        # Create the output array(s):
         outcube = thisoutds.GetData()   # (cached)
+        if propvar: outvar = thisoutds.GetVar()
         # outDQ = thisoutds.GetDQ()
 
         # Get array data from DataSet:
         cube = dataset.GetData()
         gooddq = 1-dataset.GetDQ()  # Added 2010
+        if propvar: varcube = dataset.GetVar()
 
         # print 'ref count is ', sys.getrefcount(cube)
 
@@ -327,6 +341,15 @@ def AddCubes(dslist, outds):
         trcube = ndimage.affine_transform(cube, trmatrix, troffset,
                  order=3, mode='constant', cval=numpy.nan,
                  output_shape=outshape)
+
+        # Currently this recalculates all the interpolation coefficients;
+        # could try using spline_filter() to get the coefficients beforehand
+        # but this may require a double-precision intermediate cube, using
+        # more memory:
+        if propvar:
+            trvar = ndimage.affine_transform(varcube, trmatrix, troffset,
+                    order=3, mode='constant', cval=numpy.nan,
+                    output_shape=outshape)
 
         # Added 2010 to use input DQ now that gfcube is correcting
         # atmospheric dispersion and propagating DQ for the blank edges.
@@ -349,10 +372,14 @@ def AddCubes(dslist, outds):
         # New masking using transformed input DQ (haven't thought hard
         # about optimizing the weighting WRT the science array):
         if coadd:
-            outmask += numpy.where(trdq < 0.5, 0., trdq)
-            outcube += numpy.where(trdq < 0.5, 0., trcube)
+            bdq = trdq < 0.5
+            outmask += numpy.where(bdq, 0., trdq)
+            outcube += numpy.where(bdq, 0., trcube)
+            if propvar: outvar += numpy.where(bdq, 0., trvar)
+            del bdq
         else:
             outcube += trcube
+            if propvar: outvar += trvar
 
         # numdisplay.display(outmask[1000,:,:], frame=1)
         # numdisplay.display(outcube[1000,:,:], frame=2)
@@ -371,6 +398,7 @@ def AddCubes(dslist, outds):
         # of pixels to a mean (otherwise different parts of the cube
         # would be normalized differently):
         outcube /= outmask
+        outvar /= outmask*outmask
 
     # TEST:
 #    numdisplay.display(outds.moddata[1000,:,:], frame=1)

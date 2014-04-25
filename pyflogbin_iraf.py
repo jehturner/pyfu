@@ -12,7 +12,7 @@ reload(pyflogbin)
 
 
 # Pyflogbin PyRAF interface:
-def pyflogbin_iraf(inimage, outimage):
+def pyflogbin_iraf(inimage, outimage, fl_flux, fl_var):
 
     # Ensure the input filename includes a '.fits' extension:
     inimage = astro_ds.WithFITS(inimage)
@@ -21,7 +21,7 @@ def pyflogbin_iraf(inimage, outimage):
     outimage = astro_ds.WithFITS(outimage)
 
     # Call the main Python routine:
-    pyflogbin.pyflogbin(inimage, outimage)
+    pyflogbin.pyflogbin(inimage, outimage, fluxcons=fl_flux, propvar=fl_var)
 
 # End (pyflogbin PyRAF interface routine)
 

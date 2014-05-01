@@ -15,7 +15,7 @@ reload(irafglob_jt)
 
 # Pyfmosaic PyRAF interface:
 #def pyfmosaic_iraf(inimages, outimage, posangle, method, cenfirst, cenlast):
-def pyfmosaic_iraf(inimages, outimage, posangle, separate, fl_var):
+def pyfmosaic_iraf(inimages, outimage, posangle, separate, var):
 
     # Convert inimages string to a Python list of filenames using a
     # modified version of STScI irafglob that returns an error when any
@@ -31,7 +31,7 @@ def pyfmosaic_iraf(inimages, outimage, posangle, separate, fl_var):
     if posangle == iraf.INDEF: posangle = None
 
     # Call the main Python routine:
-    pyfmosaic.pyfmosaic(inlist, outimage, posangle, separate, propvar=fl_var)
+    pyfmosaic.pyfmosaic(inlist, outimage, posangle, separate, propvar=var)
 
 # End (pyfmosaic PyRAF interface routine)
 

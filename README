@@ -1,8 +1,16 @@
 PyFU is a Pyraf/Python package for mosaicking (co-adding) datacubes that have
 mutual pointing and/or spectral offsets. It can also convert linear wavelength
 binning to log lambda for kinematic analysis. The input cubes are required to
-be in multi-extension FITS format with one SCI extension each, as for Gemini
+be in multi-extension FITS format with one SCI extension each, as with Gemini
 data, and must already have linear FITS World co-ordinate systems.
+
+This is not tested as rigorously as the official Gemini packages but works
+uneventfully with the output from gfcube in the Gemini IRAF package.
+
+If you find this work useful, please consider mentioning it in the
+acknowledgements or data reduction section of your publication (eg. Version
+0.9 of the PyFU 3D data manipulation package was contributed by James Turner
+through the Gemini Data Reduction User Forum.").
 
 
 Requirements
@@ -93,9 +101,9 @@ The mosaicking procedure has 2 steps:
          output file instead of averaging the cubes. This helps verify how well
          the registration worked at step 1; once you're happy, repeat with
          separate=no. It also potentially allows co-addition with rejection
-         using an external program such as imcombine, though currently
-         pyfmosaic doesn't write out a mask to help track the number of cubes
-         overlapping at each output pixel.
+         using an external program such as imcombine, but currently pyfmosaic
+         doesn't write out a mask to help track the number of cubes overlapping
+         at each output pixel.
 
        - If you specify var=yes, a variance cube will be generated from VAR
          extensions in the input cubes, as long as they are all available. The
@@ -115,14 +123,18 @@ like so:
 
   - This can take 5-10 minutes to run, so please be patient.
 
+  - You should do any mosaicking beforehand, as pyfmosaic requires linear WCS.
+    Also, you should not run pyflogbin more than once on the same data, as I
+    haven't checked carefully that the second attempt is a null operation.
+
   - Options:
 
     - With flux=yes, pyflogbin will scale its output values according to the
       bin size as a function of wavelength, conserving total flux rather than
-      flux density. This is probably not all that useful since you will have
-      flux calibrated your data (eg. in units per Angstrom) beforehand and
-      variance propagation is a better way to track S/N, but the option there
-      if you need it... Don't use this unless you're confident you know better!
+      flux density. This is probably not that useful since you will have flux
+      calibrated your data (eg. in units per Angstrom) beforehand and variance
+      propagation is a better way to track S/N, but the option there if you
+      need it... Don't use this unless you're confident you know better.
 
     - With var=yes, a variance cube will be generated from the input VAR
       extension, as described for pyfmosaic. In the absence of covariance
@@ -131,8 +143,8 @@ like so:
       awkward to track accurately during subsequent analysis.
 
 
-Notes & limitations
--------------------
+Other notes & limitations
+-------------------------
 
 o The expected input format is somewhat Gemini-centric (see above).
 
@@ -164,12 +176,12 @@ Plans
 -----
 
 This code is built on an 8-year-old experimental data access class/module that
-was my first significant venture into Python. It includes some pretty useful
-code for manipulating simple WCS but it's also a bit incomplete/quirky and
-lacking in documentation. Today, by far the most promising direction for
+was my first significant venture into Python. The latter includes some pretty
+useful code for manipulating simple WCS but it's also a bit incomplete/quirky
+and lacking in documentation. Today, by far the most promising direction for
 further development is to contribute to AstroPy's nddata class (see
-http://astropy.org) and its planned "generalized WCS" code and eventually
-rebuild the functionality provided here on top of that. I therefore don't
+http://astropy.org) and its planned "generalized WCS" code, eventually
+rebuilding the functionality provided here on top of that. I therefore don't
 intend to support my libraries for developing other applications but I'm open
 to improving their functionality judiciously (my available time being very
 limited) until nddata & generalized WCS do everything we want.
@@ -189,9 +201,10 @@ for Astronomy (Astropy Collaboration, 2013).
 PyRAF is a product of the Space Telescope Science Institute, which is operated
 by AURA for NASA.
 
-The SciPy community seems to have no standard acknowledgement but also
-deserves mention. In particular, Stefan van der Walt helpfully resolved an
-ndimage edge-artifact bug in 2007 that had been contaminating the results.
+The SciPy community seems to have no standard acknowledgement but provides
+the underlying numerical Python code on which this is built. In particular,
+Stefan van der Walt helpfully resolved an ndimage edge-artifact bug in 2007
+that was initially contaminating the results. 
 
 
 James, April 2014.

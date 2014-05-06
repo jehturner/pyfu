@@ -1,15 +1,16 @@
 PyFU is a Pyraf/Python package for mosaicking (co-adding) datacubes that have
 mutual pointing and/or spectral offsets. It can also convert linear wavelength
-binning to log lambda for kinematic analysis. The input cubes are required to
-be in multi-extension FITS format with one SCI extension each, as with Gemini
-data, and must already have linear FITS World co-ordinate systems.
+binning to log lambda for kinematic analysis. The input files are required to
+be in multi-extension FITS format with one "SCI" image extension each and the
+spectral co-ordinate along the third array axis, as with Gemini data. The cubes
+must already have linear FITS World co-ordinate systems.
 
-This is not tested as rigorously as the official Gemini packages but works
-uneventfully with the output from gfcube in the Gemini IRAF package.
+This is not tested as extensively as the official Gemini packages but has been
+well used with output from gfcube in the Gemini IRAF package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.9 of the PyFU 3D data manipulation package was contributed by James Turner
+0.8 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -27,37 +28,44 @@ http://ssb.stsci.edu/ureka/1.0.
 Installation
 ------------
 
-To use the PyRAF interface, set it up in your IRAF loginuser.cl like so:
+To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
+(then skip to "Usage"):
 
   reset pyfu = "/where/you/put/it/pyfu/"  # remember the trailing slash!
   task pyfu.pkg = pyfu$pyfu.cl
 
-If you prefer (and know what you're doing), you should also be able to add
+If you prefer (and don't mind reading code), you should also be able to add
 the pyfu directory to your PYTHONPATH, import pyfmosaic and call its functions
 (eg. pyfmosaic, pyfalign, AddCubes) directly from Python. That's currently not
 how I use it, since I'm tied to IRAF for the rest of my basic reduction. I'm
 afraid the Python interface isn't documented properly and I probably won't
 spend time on that unless someone asks, but there are comments in the code if
-you want to dig into it.
+you want to dig into it. There is no installation script etc.
 
 
 Usage
 -----
 
-The PyRAF interface is simple to use and you should stick to it unless you're
-a Python developer...
+The PyRAF interface is simple to use and you should stick to this unless you're
+a Python developer:
 
 Type "pyfu" in PyRAF to load the package.
 
 The mosaicking procedure has 2 steps:
 
 1. Determine any spatial offsets and update the WCS of each input cube
-   accordingly, putting them all on the same absolute World co-ordinates, eg.:
+   accordingly, to put them all on the same absolute World co-ordinates, eg.:
 
      pyfalign cube1,cube2,cube3,cube4 method="correlate"
 
      - This modifies the FITS header WCS values in place, so make a copy if
        you need a record of the original values.
+
+     - Your pointings must overlap, of course, with some discernable spatial
+       feature(s) in common, for offsets to be measurable. There is no support
+       for bootstrapping offsets from multiple sources with known relative
+       co-ordinates (though you could probably use method="centroid" and add
+       an adjustment for the separation to CRVAL1/2 afterwards).
 
      - Options:
 
@@ -67,7 +75,8 @@ The mosaicking procedure has 2 steps:
          method="correlate" (suitable for more nebulous regions) uses AstroPy's
          convolve_fft to cross-correlate each collapsed image with the first
          one at tenth-of-a-pixel resolution. These algorithms are a bit rough
-         and ready but usually do the job...
+         and ready but are good enough for registering well-sampled cubes as
+         long as they don't pick up spurious sources...
 
      - You don't have to use pyfalign at all. If your WCS values already take
        pointing differences into account accurately (unlikely), you can just
@@ -75,9 +84,9 @@ The mosaicking procedure has 2 steps:
        to figure out the offsets between cubes (eg. IRAF imexam) and update
        the CRVAL/CRPIX header keywords manually such that a given feature has
        the same World co-ordinates in every cube (see Greisen et al., 2002,
-       for more information on the conventions). Using pyfalign is much easier,
-       as long as it finds the right peak(s), which the second step can help
-       you confirm.
+       for more information on the WCS conventions). Using pyfalign is much
+       easier, however, as long as it finds the right peak(s), which the
+       second step can help you confirm.
 
      - Any spectral offsets between cubes are assumed to be reflected
        accurately in the input headers to begin with, as determined by your
@@ -114,7 +123,7 @@ The mosaicking procedure has 2 steps:
          co-ordinate scales, the calculation will currently be incorrect
          because it does not account for scaling to match the first cube (the
          science arrays themselves should be handled properly but I haven't
-         really tested that). I think mutual rotations should be OK.
+         really tested that; I think both should be OK with mutual rotations).
 
 Logarithmic wavelength rebinning is currently performed as a separate step,
 like so:
@@ -123,9 +132,9 @@ like so:
 
   - This can take 5-10 minutes to run, so please be patient.
 
-  - You should do any mosaicking beforehand, as pyfmosaic requires linear WCS.
+  - You should do any mosaicking beforehand, as pyfmosaic needs linear WCS.
     Also, you should not run pyflogbin more than once on the same data, as I
-    haven't checked carefully that the second attempt is a null operation.
+    haven't really checked that it does the right thing with log input.
 
   - Options:
 
@@ -142,11 +151,16 @@ like so:
       S/N in a single pixel, as the former would otherwise become quite
       awkward to track accurately during subsequent analysis.
 
+  - The output WCS follows the convention described in Greisen et al. (2005),
+    equation 5. This is NOT interpreted correctly by core IRAF tasks (except
+    close to the reference pixel) but is easy for the user to evaluate and
+    preserves the reference increment and range from the input.
+
 
 Other notes & limitations
 -------------------------
 
-o The expected input format is somewhat Gemini-centric (see above).
+o The expected data format is somewhat Gemini-centric (see introduction).
 
 o Specifying a rotation for the output cube (WRT the input) currently produces
   incorrect output, due to some bug that I haven't had time to fix; you should
@@ -157,14 +171,14 @@ o This version doesn't do any bad pixel rejection. You should clean up your
   then use some other program to combine the output extensions with rejection.
   I did briefly work on a pyfmosaic version with a median combine option
   (which of course uses more memory and is non-optimal in terms of S/N) but
-  any further effort will be better invested in AstroPy (see Plans).
+  any further effort will be better invested in AstroPy tools (see Plans).
 
 o Pyfalign doesn't work reliably in the presence of uncorrected cosmic rays.
   The cross-correlation option (method="correlate") hasn't been heavily tested
-  but worked well for the couple of datasets I've tried it with.
+  but worked well with the couple of datasets I've tried.
 
 o I'll probably build a log-rebinning option directly into pyfmosaic to avoid
-  the extra step but haven't got around to that yet.
+  the extra step but haven't got around to it yet.
 
 o The spline interpolation used here (from scipy.ndimage) is suitable for
   well-sampled data. If your data are undersampled (eg. NIFS), look at
@@ -180,7 +194,7 @@ was my first significant venture into Python. The latter includes some pretty
 useful code for manipulating simple WCS but it's also a bit incomplete/quirky
 and lacking in documentation. Today, by far the most promising direction for
 further development is to contribute to AstroPy's nddata class (see
-http://astropy.org) and its planned "generalized WCS" code, eventually
+http://www.astropy.org) and its planned "generalized WCS" code, eventually
 rebuilding the functionality provided here on top of that. I therefore don't
 intend to support my libraries for developing other applications but I'm open
 to improving their functionality judiciously (my available time being very
@@ -196,16 +210,16 @@ Gemini partnership of Argentina, Australia, Brazil, Canada, Chile, and the
 United States of America.
 
 This research made use of Astropy, a community-developed core Python package
-for Astronomy (Astropy Collaboration, 2013). 
+for Astronomy (Astropy Collaboration, 2013). See http://www.astropy.org.
 
 PyRAF is a product of the Space Telescope Science Institute, which is operated
 by AURA for NASA.
 
-The SciPy community seems to have no standard acknowledgement but provides
-the underlying numerical Python code on which this is built. In particular,
-Stefan van der Walt helpfully resolved an ndimage edge-artifact bug in 2007
-that was initially contaminating the results. 
+The SciPy community (http://scipy.org) seems to have no standard
+acknowledgement but provides the underlying numerical Python code on which this
+is built. In particular, Stefan van der Walt helpfully resolved an ndimage
+edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, April 2014.
+James, May 2014.
 

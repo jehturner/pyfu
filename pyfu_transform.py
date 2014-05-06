@@ -1,4 +1,5 @@
-# Copyright(c) 2006 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2006 Association of Universities for Research in Astronomy, Inc.,
+# by James E.H. Turner.
 #
 # Version  Feb-Apr, 2006  JT Initial test version
 #

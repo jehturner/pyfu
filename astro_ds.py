@@ -1,5 +1,5 @@
-# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.
-# by James E.H. Turner
+# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.,
+# by James E.H. Turner.
 #
 # Version  Feb-Apr, 2006  JT Initial test version
 # Version      Nov, 2013  JT Some DQ support, WCS copy bug, distinguish CTYPEs

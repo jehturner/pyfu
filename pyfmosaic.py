@@ -1,5 +1,5 @@
-# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.
-# by James E.H. Turner
+# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.,
+# by James E.H. Turner.
 #
 # 'pyfmosaic' main Python module for mosaicing IFU datacubes
 #

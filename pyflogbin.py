@@ -1,4 +1,4 @@
-# Copyright(c) 2013-2014 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2013-2014 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
 # 'pyflogbin' Python module for rebinning cubes logarithmically in wavelength

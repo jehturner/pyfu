@@ -28,7 +28,7 @@ http://ssb.stsci.edu/ureka/1.0.
 Installation
 ------------
 
-Change to the parent directory under which you want to put pyfu's directory
+Change to the parent directory under which you want to put pyfu's subdirectory
 and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8/ do:
 
   cd

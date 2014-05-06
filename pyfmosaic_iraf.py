@@ -1,8 +1,9 @@
-# Copyright(c) 2006 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
 #
 # PyRAF interface functions for pyfu.pyfmosaic and related routines
 #
 # Version  Feb-May, 2006  JT Initial test version
+# Version      Apr, 2014  JT Variance parameter
 
 from pyraf import iraf
 import pyfmosaic, irafglob_jt, astro_ds
@@ -14,7 +15,7 @@ reload(irafglob_jt)
 
 # Pyfmosaic PyRAF interface:
 #def pyfmosaic_iraf(inimages, outimage, posangle, method, cenfirst, cenlast):
-def pyfmosaic_iraf(inimages, outimage, posangle, separate):
+def pyfmosaic_iraf(inimages, outimage, posangle, separate, var):
 
     # Convert inimages string to a Python list of filenames using a
     # modified version of STScI irafglob that returns an error when any
@@ -30,7 +31,7 @@ def pyfmosaic_iraf(inimages, outimage, posangle, separate):
     if posangle == iraf.INDEF: posangle = None
 
     # Call the main Python routine:
-    pyfmosaic.pyfmosaic(inlist, outimage, posangle, separate)
+    pyfmosaic.pyfmosaic(inlist, outimage, posangle, separate, propvar=var)
 
 # End (pyfmosaic PyRAF interface routine)
 

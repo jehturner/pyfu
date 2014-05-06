@@ -1,4 +1,6 @@
-- Query pyraf/numarray forum about interpolation artefact and speed of
+This is old:
+
+- Query pyraf/numarray forum about interpolation artifact and speed of
   affine_transform
 
 - Make all the DataSet stuff work transparently for simple FITS files

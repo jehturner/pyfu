@@ -1,2 +1,4 @@
 inimage,s,l,,,,"x,y,lambda datacube to rebin"
 outimage,s,l,,,,"Output logarithmically-binned datacube"
+flux,b,h,"no",,,"Conserve total flux (for data in e-)?"
+var,b,h,"no",,,"Propagate variance array to the output?"

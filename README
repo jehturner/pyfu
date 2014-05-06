@@ -28,10 +28,16 @@ http://ssb.stsci.edu/ureka/1.0.
 Installation
 ------------
 
+Change to the parent directory under which you want to put pyfu's directory
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8/ do:
+
+  cd
+  tar zxf pyfu-0.8.tar.gz
+
 To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
 (then skip to "Usage"):
 
-  reset pyfu = "/where/you/put/it/pyfu/"  # remember the trailing slash!
+  reset pyfu = "/where/you/put/it/pyfu-0.8/"  # remember the trailing slash!
   task pyfu.pkg = pyfu$pyfu.cl
 
 If you prefer (and don't mind reading code), you should also be able to add

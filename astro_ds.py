@@ -237,8 +237,8 @@ class DataSet:
                     # In case extver has been set in the header but not
                     # the HDU and there are skipped extvers or what not,
                     # synchronize the count with the header EXTVER:
-                    ver = thishdu.header['extver']
-                    count = ver
+                    refver = thishdu.header['extver']
+                    count = refver
                 except KeyError:
                     pass
                 if count == ver:

@@ -398,7 +398,7 @@ def AddCubes(dslist, outds, propvar=False):
         # of pixels to a mean (otherwise different parts of the cube
         # would be normalized differently):
         outcube /= outmask
-        outvar /= outmask*outmask
+        if propvar: outvar /= outmask*outmask
 
     # TEST:
 #    numdisplay.display(outds.moddata[1000,:,:], frame=1)

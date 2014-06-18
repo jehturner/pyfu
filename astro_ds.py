@@ -763,6 +763,19 @@ class DataSet:
 
         # End (if WCS parameters are not overridden)
 
+        # When there's only a single reference input and nothing is being
+        # overridden, we simply want to copy the array dimensions & WCS zero
+        # points from it. This is treated as a special case here in order to
+        # avoid small numerical differences when repeating the calculations
+        # below, which can lead to the grid shrinking by 1 pixel due to
+        # rounding, causing unintended mismatches:
+        if len(dslist)==1 and pa is None and stdorient is None \
+          and scale is None:
+            self.shape = ds1.shape
+            self.cridx = list(ds1.cridx)
+            self.crval = list(ds1.crval)
+            return
+
         # Loop over the input datasets and get the corners bounding each
         # dataset, relative to the output system:
         idxmin = numpy.empty(ndim); idxmin[:] = numpy.nan
@@ -790,6 +803,17 @@ class DataSet:
 
         # Calculate the required axis lengths from the min & max corner
         # co-ordinate along each axis:
+        # - Here int() is used to round down and avoid any blank (or
+        #   extrapolated) edge pixels, but this sometimes causes an entire
+        #   pixel to be lost due to small calculation errors (eg. 49.9999999
+        #   -> 49.). Moreover, if we do this repeatedly, eg. when calculating
+        #   an output grid and later copying it from one output dataset to
+        #   another, an additional pixel gets lost each time, causing the
+        #   output grids not to match (which in turn causes pyfmosaic to fail
+        #   with a traceback). Thus to avoid blank edge pixels here, we need
+        #   to do this only once and instead treat a single reference input
+        #   dataset as a special case above, thereby also avoiding any other
+        #   small numerical differences.
         self.shape = tuple([int(axmax-axmin+1) for axmin,axmax \
             in zip(idxmin,idxmax)])
 

@@ -763,19 +763,6 @@ class DataSet:
 
         # End (if WCS parameters are not overridden)
 
-        # When there's only a single reference input and nothing is being
-        # overridden, we simply want to copy the array dimensions & WCS zero
-        # points from it. This is treated as a special case here in order to
-        # avoid small numerical differences when repeating the calculations
-        # below, which can lead to the grid shrinking by 1 pixel due to
-        # rounding, causing unintended mismatches:
-        if len(dslist)==1 and pa is None and stdorient is None \
-          and scale is None:
-            self.shape = ds1.shape
-            self.cridx = list(ds1.cridx)
-            self.crval = list(ds1.crval)
-            return
-
         # Loop over the input datasets and get the corners bounding each
         # dataset, relative to the output system:
         idxmin = numpy.empty(ndim); idxmin[:] = numpy.nan
@@ -801,27 +788,35 @@ class DataSet:
 
         # End (loop over datasets, calculating corners & limits)
 
-        # Calculate the required axis lengths from the min & max corner
-        # co-ordinate along each axis:
+        # Calculate output index mid-points in the relative co-ords:
+        idxcen = [0.5*(axmin+axmax) for axmin, axmax in zip(idxmin, idxmax)]
+
+        # When there's only a single reference input and nothing is being
+        # overridden, we simply want to copy the array dimensions from it.
+        # This is treated as a special case here in order to avoid small
+        # numerical differences when repeating the calculations, which can
+        # lead to the grid shrinking by 1 pixel due to rounding, causing
+        # unintended mismatches:
+        if len(dslist)==1 and pa is None and scale is None:
+            self.shape = ds1.shape
+
+        # Otherwise, calculate the required axis lengths from the min & max
+        # corner co-ordinate along each axis:
         # - Here int() is used to round down and avoid any blank (or
         #   extrapolated) edge pixels, but this sometimes causes an entire
-        #   pixel to be lost due to small calculation errors (eg. 49.9999999
-        #   -> 49.). Moreover, if we do this repeatedly, eg. when calculating
-        #   an output grid and later copying it from one output dataset to
-        #   another, an additional pixel gets lost each time, causing the
-        #   output grids not to match (which in turn causes pyfmosaic to fail
-        #   with a traceback). Thus to avoid blank edge pixels here, we need
-        #   to do this only once and instead treat a single reference input
-        #   dataset as a special case above, thereby also avoiding any other
-        #   small numerical differences.
-        self.shape = tuple([int(axmax-axmin+1) for axmin,axmax \
-            in zip(idxmin,idxmax)])
+        #   pixel to be lost due to small calculation errors (eg. 49.999999
+        #   -> 49.). Moreover, if we do this repeatedly, eg. when
+        #   calculating an output grid and later copying it from one output
+        #   dataset to another, an additional pixel gets lost each time,
+        #   hence the special case above for a single input.
+        else:
+            self.shape = tuple([int(axmax-axmin+1) for axmin,axmax \
+                in zip(idxmin,idxmax)])
 
         # Take the centre of the output cube as the reference point and
         # find its world co-ordinates by reversing the above transformation
         # to "relative" pixel co-ordinates:
         self.cridx = [0.5*(ax-1) for ax in self.shape]
-        idxcen = [0.5*(axmin+axmax) for axmin, axmax in zip(idxmin, idxmax)]
         self.crval = list(self.TransformToWCS(idxcen, relative=True))
 
         # If the wavelength scale is logarithmic, override its World reference

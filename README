@@ -10,7 +10,7 @@ well used with output from gfcube in the Gemini IRAF package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.8 of the PyFU 3D data manipulation package was contributed by James Turner
+0.8.1 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -21,23 +21,23 @@ The following dependencies are required to use pyfu:
     NumPy, SciPy, STScI Python  (some recent version)
     AstroPy 0.3
 
-The easiest way to get these is to download Ureka from
-http://ssb.stsci.edu/ureka/1.0.
+The easiest way to get these is to download Ureka >=1.0 from
+http://ssb.stsci.edu/ureka.
 
 
 Installation
 ------------
 
 Change to the parent directory under which you want to put pyfu's subdirectory
-and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8/ do:
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8.1/ do:
 
   cd
-  tar zxf pyfu-0.8.tar.gz
+  tar zxf pyfu-0.8.1.tar.gz
 
 To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
 (then skip to "Usage"):
 
-  reset pyfu = "/where/you/put/it/pyfu-0.8/"  # remember the trailing slash!
+  reset pyfu = "/where/you/put/it/pyfu-0.8.1/"  # remember the trailing slash!
   task pyfu.pkg = pyfu$pyfu.cl
 
 If you prefer (and don't mind reading code), you should also be able to add
@@ -207,6 +207,18 @@ to improving their functionality judiciously (my available time being very
 limited) until nddata & generalized WCS do everything we want.
 
 
+Changes
+-------
+
+0.8.1
+
+o Don't try & fail to calculate variance when propagation disabled.
+
+o Avoid 1-pixel grid copy mismatch due to repeated rounding.
+
+o Fix recently-broken separate+ option, due to re-used variable name.
+
+
 Acknowledgements
 ----------------
 
@@ -227,5 +239,5 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, May 2014.
+James, June 2014.
 

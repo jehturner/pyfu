@@ -13,7 +13,7 @@ IFU data and Gemini-style MEF files) with STScI's numpy and PyFITS
 (likely to be replaced at some point by Gemini AstroData & AstroPy nddata)
 """
 import math, pyfits, numpy, string, pyfu_transform
-import numpy.linalg, numpy.numarray.mlab
+import numpy.linalg
 
 
 # Extension naming convention:
@@ -496,10 +496,7 @@ class DataSet:
 
         # Collapse the array down to a 2D image, assuming the last 2
         # dimensions (ie. the first 2 in IRAF/FITS) are spatial axes:
-        image = self.GetData()
-        
-        for dim in range(0, self.ndim-2):
-            image = numpy.numarray.mlab.mean(image,0)
+        image = numpy.mean(self.GetData(), axis=0, dtype=None, keepdims=False)
 
         # If there is a reference dataset, transform image accordingly:
         if match:

@@ -10,11 +10,15 @@
 #                            resample to separate extensions for inspection
 #              Jan, 2014  JT Fix imports for AstroPy 0.3
 #              Mar, 2014  JT Add variance propagation
+#              Aug, 2015  JT NumPy 1.9 compatibility
+#              Aug, 2016  JT Add setup.py etc. for direct use as Python module
+#              Oct, 2016  JT NumPy 1.10 compatibility
 
-import numpy, pyfits
+import numpy
 from scipy import ndimage
 from stsci import imagestats
-# from astropy.io import fits as pyfits
+import pyfits
+#import astropy.io.fits as pyfits
 import astropy.convolution as acnv
 import astro_ds
 #import numdisplay
@@ -307,9 +311,9 @@ def AddCubes(dslist, outds, propvar=False):
     outicd = outref.GetICD()
 
     # Create a mask counting the number of input pixels contributing
-    # to each output pixel (maximum 256, no checking!):
+    # to each output pixel (which can be fractional at edges):
     if coadd:
-        outmask = numpy.zeros(outshape, dtype='uint8')
+        outmask = numpy.zeros(outshape, dtype='float32')
 
     # Get world co-ords of the output cube origin:
     outzero = outref.TransformToWCS([0.0 for axis in range(outref.ndim)])
@@ -392,7 +396,7 @@ def AddCubes(dslist, outds, propvar=False):
     if coadd:
 
         # Replace zeros in the output mask by ones before dividing:
-        outmask = numpy.where(outmask, outmask, 1.)
+        outmask = numpy.where(outmask >= 0.5, outmask, 1.)
 
         # Divide co-added output cube by its mask, to convert the sum
         # of pixels to a mean (otherwise different parts of the cube

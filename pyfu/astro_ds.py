@@ -4,6 +4,7 @@
 # Version  Feb-Apr, 2006  JT Initial test version
 # Version      Nov, 2013  JT Some DQ support, WCS copy bug, distinguish CTYPEs
 # Version      Apr, 2014  JT Variance support
+# Version      Oct, 2016  JT Use astropy.io.fits instead of pyfits
 #
 # See the accompanying file LICENSE for conditions on copying.
 #
@@ -12,8 +13,10 @@ A module for high-level manipulation of astronomical datasets (especially
 IFU data and Gemini-style MEF files) with STScI's numpy and PyFITS
 (likely to be replaced at some point by Gemini AstroData & AstroPy nddata)
 """
-import math, pyfits, numpy, string, pyfu_transform
-import numpy.linalg
+import math, string
+import numpy, numpy.linalg
+import astropy.io.fits as pyfits
+import pyfu_transform
 
 
 # Extension naming convention:

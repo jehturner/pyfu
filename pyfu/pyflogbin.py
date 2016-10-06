@@ -5,8 +5,9 @@
 #
 # Version  Nov, 2013  JT Initial version
 
-import pyfits, numpy
+import numpy
 import scipy.ndimage.interpolation as ndi
+import astropy.io.fits as pyfits
 import astro_ds
 
 import cProfile, pstats, sys

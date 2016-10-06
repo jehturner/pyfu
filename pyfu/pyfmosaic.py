@@ -12,13 +12,12 @@
 #              Mar, 2014  JT Add variance propagation
 #              Aug, 2015  JT NumPy 1.9 compatibility
 #              Aug, 2016  JT Add setup.py etc. for direct use as Python module
-#              Oct, 2016  JT NumPy 1.10 compatibility
+#              Oct, 2016  JT NumPy 1.10 compatibility & use astropy.io.fits
 
 import numpy
 from scipy import ndimage
 from stsci import imagestats
-import pyfits
-#import astropy.io.fits as pyfits
+import astropy.io.fits as pyfits
 import astropy.convolution as acnv
 import astro_ds
 #import numdisplay

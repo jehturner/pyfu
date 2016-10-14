@@ -28,34 +28,52 @@ http://ssb.stsci.edu/ureka.
 Installation
 ------------
 
-Change to the parent directory under which you want to put pyfu's subdirectory
+Change to the parent directory in which you want to put PyFU's source directory
 and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8.2/ do:
 
   cd
   tar zxf pyfu-0.8.2.tar.gz
 
-To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
-(then skip to "Usage"):
+PyRAF
 
-  reset pyfu = "/where/you/put/it/pyfu-0.8.2/"  # remember the trailing slash!
-  task pyfu.pkg = pyfu$pyfu.cl
+  To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
+  (then skip to "Usage"):
 
-If you prefer (and don't mind reading code), you should also be able to add
-the pyfu directory to your PYTHONPATH, import pyfmosaic and call its functions
-(eg. pyfmosaic, pyfalign, AddCubes) directly from Python. That's currently not
-how I use it, since I'm tied to IRAF for the rest of my basic reduction. I'm
-afraid the Python interface isn't documented properly and I probably won't
-spend time on that unless someone asks, but there are comments in the code if
-you want to dig into it. There is no installation script etc.
+    reset pyfu = "/where/you/put/it/pyfu-0.8.2/pyfu/"  # need trailing slash!
+    task pyfu.pkg = pyfu$pyfu.cl
+
+  You can also install it into Python as detailed below and adapt the above
+  path accordingly (pointing to pythonN.N/site-packages/pyfu/).
+
+Python (including use with NDMapper)
+
+  Configure the Python environment in which you want to install PyFU, eg. 
+
+    For Anaconda:
+
+      conda create -n pyfu_env iraf pyraf stsci   (or similar)
+      source activate pyfu_env
+
+    For Ureka:
+
+      ur_setup -n pyfu_variant
+
+  Use "which python" to check that you are finding python in the expected
+  place, then install the package in the usual way:
+
+    cd pyfu-0.8.2/
+    python setup.py install
+
+  Then do "import pyfu" in Python. The interface is best documented via the
+  lib.gmos functions in my NDMapper Python package; I haven't got around to
+  writing docstrings here, but the options are equivalent to those
+  described below for PyRAF and there are a few comments in pyfmosaic.py.
 
 
-Usage
------
+Usage with PyRAF
+----------------
 
-The PyRAF interface is simple to use and you should stick to this unless you're
-a Python developer:
-
-Type "pyfu" in PyRAF to load the package.
+The PyRAF interface is simple to use. Type "pyfu" to load the package.
 
 The mosaicking procedure has 2 steps:
 

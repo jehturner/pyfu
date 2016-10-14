@@ -10,7 +10,7 @@ well used with output from gfcube in the Gemini IRAF package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.8.1 of the PyFU 3D data manipulation package was contributed by James Turner
+0.8.2 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -18,10 +18,10 @@ Requirements
 ------------
 
 The following dependencies are required to use pyfu:
-    NumPy, SciPy, STScI Python  (some recent version)
-    AstroPy 0.3
+    NumPy, SciPy, STScI Python, AstroPy  (some recent version)
 
-The easiest way to get these is to download Ureka >=1.0 from
+The easiest way to get these is to install AstroConda as described at
+http://astroconda.readthedocs.io, or download Ureka >=1.0 from
 http://ssb.stsci.edu/ureka.
 
 
@@ -29,15 +29,15 @@ Installation
 ------------
 
 Change to the parent directory under which you want to put pyfu's subdirectory
-and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8.1/ do:
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8.2/ do:
 
   cd
-  tar zxf pyfu-0.8.1.tar.gz
+  tar zxf pyfu-0.8.2.tar.gz
 
 To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
 (then skip to "Usage"):
 
-  reset pyfu = "/where/you/put/it/pyfu-0.8.1/"  # remember the trailing slash!
+  reset pyfu = "/where/you/put/it/pyfu-0.8.2/"  # remember the trailing slash!
   task pyfu.pkg = pyfu$pyfu.cl
 
 If you prefer (and don't mind reading code), you should also be able to add
@@ -210,6 +210,17 @@ limited) until nddata & generalized WCS do everything we want.
 Changes
 -------
 
+0.8.2
+
+o Restructure slightly & add a setup.py, for direct use as a Python module
+  (in particular by NDMapper), as an alternative to the PyRAF interface.
+
+o Use astropy.io.fits instead of pyfits.
+
+o Minor fixes to support API changes in NumPy 1.9 and 1.10. Mask division
+  now accounts for fractional edge pixels.
+
+
 0.8.1
 
 o Don't try & fail to calculate variance when propagation disabled.
@@ -239,5 +250,5 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, June 2014.
+James, October 2016.
 

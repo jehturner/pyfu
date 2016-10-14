@@ -266,7 +266,7 @@ class DataSet:
                 hdu.data = getdata()
 
         # Ensure the extension version is correct in the header:
-        hdu.header.update('extver', ver)
+        hdu.header['extver'] = ver
 
         # Update header with the WCS etc:
         self._UpdateHdr(hdu.header)
@@ -279,7 +279,7 @@ class DataSet:
 
         # Set dimensionality:
         ndim = self.ndim
-        scihdr.update('naxis', ndim)
+        scihdr['naxis'] = ndim
 
         ndimplus1 = ndim+1
 
@@ -294,19 +294,19 @@ class DataSet:
             #
             # # Set axis length in pixels:
             # keyw = 'NAXIS'+str(fdim)
-            # scihdr.update(keyw, self.shape[adim])
+            # scihdr[keyw] = self.shape[adim]
 
             # Set reference pixel for this axis:
             keyw = 'CRPIX'+str(fdim)
-            scihdr.update(keyw, self.cridx[adim]+1.0)
+            scihdr[keyw] = self.cridx[adim]+1.0
 
             # Set world reference value for this axis:
             keyw = 'CRVAL'+str(fdim)
-            scihdr.update(keyw, self.crval[adim])
+            scihdr[keyw] = self.crval[adim]
 
             # Set world co-ordinate type for this axis:
             keyw = 'CTYPE'+str(fdim)
-            scihdr.update(keyw, str(self.ctype[adim]))
+            scihdr[keyw] = str(self.ctype[adim])
 
         # End (loop over FITS dimensions)
 
@@ -315,7 +315,7 @@ class DataSet:
         for wdim in range(1, ndimplus1):
             for fdim in range(1, ndimplus1):
                 keyw = 'CD'+str(wdim)+'_'+str(fdim)
-                scihdr.update(keyw, self.cd[ndim-fdim,ndim-wdim])
+                scihdr[keyw] = self.cd[ndim-fdim,ndim-wdim]
         # End (loop over CD matrix)
             
     # End (method to update an HDU header with the DataSet WCS etc)

@@ -10,7 +10,7 @@ well used with output from gfcube in the Gemini IRAF package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.8.2 of the PyFU 3D data manipulation package was contributed by James Turner
+0.9 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -21,25 +21,25 @@ The following dependencies are required to use pyfu:
     NumPy, SciPy, STScI Python, AstroPy  (some recent version)
 
 The easiest way to get these is to install AstroConda as described at
-http://astroconda.readthedocs.io, or download Ureka >=1.0 from
-http://ssb.stsci.edu/ureka.
+http://astroconda.readthedocs.io (not yet tested), or download Ureka >=1.0
+from http://ssb.stsci.edu/ureka.
 
 
 Installation
 ------------
 
 Change to the parent directory in which you want to put PyFU's source directory
-and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.8.2/ do:
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.9/ do:
 
   cd
-  tar zxf pyfu-0.8.2.tar.gz
+  tar zxf pyfu-0.9.tar.gz
 
 PyRAF
 
   To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
   (then skip to "Usage"):
 
-    reset pyfu = "/where/you/put/it/pyfu-0.8.2/pyfu/"  # need trailing slash!
+    reset pyfu = "/where/you/put/it/pyfu-0.9/pyfu/"  # need trailing slash!
     task pyfu.pkg = pyfu$pyfu.cl
 
   You can also install it into Python as detailed below and adapt the above
@@ -61,13 +61,13 @@ Python (including use with NDMapper)
   Use "which python" to check that you are finding python in the expected
   place, then install the package in the usual way:
 
-    cd pyfu-0.8.2/
+    cd pyfu-0.9/
     python setup.py install
 
-  Then do "import pyfu" in Python. The interface is best documented via the
-  lib.gmos functions in my NDMapper Python package; I haven't got around to
-  writing docstrings here, but the options are equivalent to those
-  described below for PyRAF and there are a few comments in pyfmosaic.py.
+  Then do "import pyfu" in Python. This (and the GMOS IRAF package) can
+  also be used via the lib.gmos interface in my NDMapper Python package.
+  For a bit more information, see the doc strings and/or description of the
+  analagous PyRAF interface below.
 
 
 Usage with PyRAF
@@ -228,7 +228,7 @@ limited) until nddata & generalized WCS do everything we want.
 Changes
 -------
 
-0.8.2
+0.9
 
 o Restructure slightly & add a setup.py, for direct use as a Python module
   (in particular by NDMapper), as an alternative to the PyRAF interface.

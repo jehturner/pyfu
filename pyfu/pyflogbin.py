@@ -1,4 +1,4 @@
-# Copyright(c) 2013-2014 Association of Universities for Research in Astronomy, Inc.,
+# Copyright(c) 2013-2016 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
 # 'pyflogbin' Python module for rebinning cubes logarithmically in wavelength
@@ -16,8 +16,32 @@ reload(astro_ds)
 
 # Pyflogbin main routine (non-PyRAF interface):
 def pyflogbin(inimage, outimage, fluxcons=False, propvar=False):
+    """
+    Re-bin a data cube with a logarithmic spectral WCS
 
-    """Re-bin a data cube with a logarithmic spectral WCS"""
+    Parameters
+    ----------
+
+    inimage : str
+        Filename of an input image containing an x-y-lambda data cube in a
+        FITS image extension named 'SCI', as for GMOS.
+
+    outimage : str
+        Filename of the resampled output data cube, to be written to disk.
+
+    fluxcons : bool, optional
+        Scale output values according to the bin size as a function of
+        wavelength, conserving total flux rather than flux density (default
+        False) ? This is not normally used, since data will be flux calibrated
+        by this point (eg. in units per Angstrom), if needed, and variance
+        propagation is a better way to track S/N.
+
+    propvar : bool, optional
+        Resample any variance ('VAR') array to the output file, alongside the
+        main data ('SCI') array. The intention is to conserve overall S/N,
+        ignoring covariance, rather than the S/N in a single pixel.
+
+    """
 
     # Open the input file:
     inhdulist = pyfits.open(inimage, mode='readonly')

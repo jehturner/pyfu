@@ -1,4 +1,4 @@
-# Copyright(c) 2006-2014 Association of Universities for Research in Astronomy, Inc.,
+# Copyright(c) 2006-2016 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
 # 'pyfmosaic' main Python module for mosaicing IFU datacubes
@@ -28,14 +28,41 @@ reload(astro_ds)
 
 # Pyfmosaic main routine (non-PyRAF interface):
 #
-# list   inimages = Python list of input image names
-#                   (no wildcards here, only in the PyRAF interface)
-# str    outimage = output image name
-# float  posangle = output position angle
-#
 def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
+    """
+    Mosaic IFU datacubes, based on their (simple linear) WCS
 
-    """Mosaic IFU datacubes, based on WCS"""
+    Parameters
+    ----------
+
+    inimages : list of str
+        List of input image filenames (no wildcards in this interface).
+        Each file should contain one x-y-lambda data cube in a FITS image
+        extension named 'SCI', as for GMOS.
+
+    outimage : str
+        Filename of the combined output data cube to be written to disk
+        (in a FITS image extension named 'SCI').
+
+    posangle : float or None, optional
+        Rotation of the output data cube, if different from the first input.
+        This option is currently broken (rotates around the wrong centre),
+        so don't use it :-(.
+
+    separate : bool, optional
+        After aligning the input cubes to a common grid, write each one to a
+        separate FITS extension of the output file (for inspecting their
+        alignment and/or to allow co-addition using another program) instead
+        of co-adding them onto a single 3D array (default False)?
+
+    propvar : bool
+        Propagate any input variance ('VAR') arrays, aligning and co-adding
+        them in the same way as the main ('SCI') data arrays, ignoring
+        small-scale covariance (default False)? Currently assumes that the
+        input cubes have the same spatial scale.
+        
+
+    """
 
     # Add a bit more sanity checking for the input parameters when
     # the task is closer to being finished?
@@ -110,13 +137,30 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
 
 # Pyfalign main routine (non-PyRAF interface):
 #
-# list     images = Python list of image names to update with new WCS
-#                   (no wildcards here, only in the PyRAF interface)
-# str      method = datacube alignment method
-#
 def pyfalign(images, method):
+    """
+    Spatially align the (linear) WCSs of overlapping IFU datacubes onto a
+    common system, based on registration of their image features.
 
-    """Spatially align WCS of IFU datacubes onto a common system"""
+    Parameters
+    ----------
+
+    images : list of str
+        Names of files, each containing a 3D 'SCI' image extension, to have
+        their spatial WCS zero points modified in place (no wildcards).
+
+    method : {'centroid', 'correlate'}
+        Registration algorithm to use. To measure the offsets, pyfalign sums
+        each cube over wavelength to produce an image. The 'centroid' option
+        then simply finds the brightest peak and takes a centroid over its
+        half-maximum region while 'correlate' (suitable for more nebulous
+        regions) uses AstroPy's convolve_fft to cross-correlate each collapsed
+        image with the first one at tenth-of-a-pixel resolution. These
+        algorithms are a bit rough and ready but are good enough for
+        registering well-sampled cubes as long as they don't pick up spurious
+        sources (so cosmic rays should be removed beforehand).
+
+    """
 
     known_methods=['centroid', 'correlate']
 

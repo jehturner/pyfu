@@ -21,8 +21,8 @@ The following dependencies are required to use pyfu:
     NumPy, SciPy, STScI Python, AstroPy  (some recent version)
 
 The easiest way to get these is to install AstroConda as described at
-http://astroconda.readthedocs.io, or download Ureka >=1.0 from
-http://ssb.stsci.edu/ureka.
+http://astroconda.readthedocs.io (not yet tested), or download Ureka >=1.0
+from http://ssb.stsci.edu/ureka.
 
 
 Installation
@@ -64,10 +64,10 @@ Python (including use with NDMapper)
     cd pyfu-0.9/
     python setup.py install
 
-  Then do "import pyfu" in Python. The interface is best documented via the
-  lib.gmos functions in my NDMapper Python package; I haven't got around to
-  writing docstrings here, but the options are equivalent to those
-  described below for PyRAF and there are a few comments in pyfmosaic.py.
+  Then do "import pyfu" in Python. This (and the GMOS IRAF package) can
+  also be used via the lib.gmos interface in my NDMapper Python package.
+  For a bit more information, see the doc strings and/or description of the
+  analagous PyRAF interface below.
 
 
 Usage with PyRAF

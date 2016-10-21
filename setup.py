@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='PyFU',
-      version='0.9dev',
+      version='0.10dev',
       description='Python scripts for mosaicking/resampling IFU data cubes',
       author='James E.H. Turner',
       author_email='jturner@gemini.edu',

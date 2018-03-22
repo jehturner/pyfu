@@ -1,10 +1,11 @@
-# Copyright(c) 2006-2015 Association of Universities for Research in Astronomy, Inc.,
+# Copyright(c) 2006-2018 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
 # Version  Feb-Apr, 2006  JT Initial test version
 # Version      Nov, 2013  JT Some DQ support, WCS copy bug, distinguish CTYPEs
 # Version      Apr, 2014  JT Variance support
 # Version      Oct, 2016  JT Use astropy.io.fits instead of pyfits
+# Version      Mar, 2018  JT Python 3 compatibility
 #
 # See the accompanying file LICENSE for conditions on copying.
 #
@@ -16,7 +17,7 @@ IFU data and Gemini-style MEF files) with STScI's numpy and PyFITS
 import math, string
 import numpy, numpy.linalg
 import astropy.io.fits as pyfits
-import pyfu_transform
+from . import pyfu_transform
 
 
 # Extension naming convention:
@@ -116,7 +117,7 @@ class DataSet:
             try:
                 cridx = scihdr[keyw]-1.0
             except KeyError:
-                # print self._key_warning(keyw, scihdrname, 1)
+                # print(self._key_warning(keyw, scihdrname, 1))
                 cridx = 0.0
             ridxlist.append(cridx)
 
@@ -134,7 +135,7 @@ class DataSet:
                 except KeyError:
                     if dim == wdim: cdval = 1.0
                     else: cdval = 0.0
-                    # print self._key_warning(keyw, scihdrname, cdval)
+                    # print(self._key_warning(keyw, scihdrname, cdval))
                 cdmatrix[dim,wdim] = cdval
         # End (loop over CD matrix)
 
@@ -148,7 +149,7 @@ class DataSet:
                 crval = scihdr[keyw]
             except KeyError:
                 crval = 0.0
-                # print self._key_warning(keyw, scihdrname, crval)
+                # print(self._key_warning(keyw, scihdrname, crval))
             rvallist.append(crval)
             keyw = 'CTYPE'+str(wdim)
             try:

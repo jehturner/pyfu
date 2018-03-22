@@ -3,12 +3,11 @@
 # PyRAF interface functions for pyfu.pyflogbin and related routines
 #
 # Version  Nov, 2013  JT Initial version
+# Version  Nov, 2018  JT Python 3 compatibility
 
 from pyraf import iraf
-import pyflogbin, astro_ds
 
-# Temporary - reload module development changes:
-reload(pyflogbin)
+from pyfu import pyflogbin, astro_ds
 
 
 # Pyflogbin PyRAF interface:
@@ -21,7 +20,7 @@ def pyflogbin_iraf(inimage, outimage, flux, var):
     outimage = astro_ds.WithFITS(outimage)
 
     # Call the main Python routine:
-    pyflogbin.pyflogbin(inimage, outimage, fluxcons=flux, propvar=var)
+    pyflogbin(inimage, outimage, fluxcons=flux, propvar=var)
 
 # End (pyflogbin PyRAF interface routine)
 

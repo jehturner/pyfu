@@ -1,4 +1,4 @@
-# Copyright(c) 2006-2016 Association of Universities for Research in Astronomy, Inc.,
+# Copyright(c) 2006-2018 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
 # 'pyfmosaic' main Python module for mosaicing IFU datacubes
@@ -13,17 +13,15 @@
 #              Aug, 2015  JT NumPy 1.9 compatibility
 #              Aug, 2016  JT Add setup.py etc. for direct use as Python module
 #              Oct, 2016  JT NumPy 1.10 compatibility & use astropy.io.fits
+#              Mar, 2018  JT Python 3 compatibility
 
 import numpy
 from scipy import ndimage
 from stsci import imagestats
 import astropy.io.fits as pyfits
 import astropy.convolution as acnv
-import astro_ds
-#import numdisplay
 
-# Temporary - reload module development changes:
-reload(astro_ds)
+from . import astro_ds
 
 
 # Pyfmosaic main routine (non-PyRAF interface):
@@ -374,7 +372,7 @@ def AddCubes(dslist, outds, propvar=False):
         gooddq = 1-dataset.GetDQ()  # Added 2010
         if propvar: varcube = dataset.GetVar()
 
-        # print 'ref count is ', sys.getrefcount(cube)
+        # print('ref count is ', sys.getrefcount(cube))
 
         # Calculate the transformation matrix from relative output co-ords
         # to relative input co-ords:

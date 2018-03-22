@@ -1,16 +1,14 @@
-# Copyright(c) 2006-2013 Association of Universities for Research in Astronomy, Inc.
+# Copyright(c) 2006-2018 Association of Universities for Research in Astronomy, Inc.
 #
 # PyRAF interface functions for pyfu.pyfmosaic and related routines
 #
 # Version  Feb-May, 2006  JT Initial test version
 # Version      Apr, 2014  JT Variance parameter
+# Version      Mar, 2018  JT Python 3 compatibility
 
 from pyraf import iraf
-import pyfmosaic, irafglob_jt, astro_ds
 
-# Temporary - reload module development changes:
-reload(pyfmosaic)
-reload(irafglob_jt)
+from pyfu import pyfmosaic, irafglob_jt, astro_ds
 
 
 # Pyfmosaic PyRAF interface:
@@ -31,7 +29,7 @@ def pyfmosaic_iraf(inimages, outimage, posangle, separate, var):
     if posangle == iraf.INDEF: posangle = None
 
     # Call the main Python routine:
-    pyfmosaic.pyfmosaic(inlist, outimage, posangle, separate, propvar=var)
+    pyfmosaic(inlist, outimage, posangle, separate, propvar=var)
 
 # End (pyfmosaic PyRAF interface routine)
 
@@ -47,7 +45,7 @@ def pyfalign_iraf(images, method):
         raise IOError('no files matching \'%s\'' % images)
 
     # Call the main Python routine:
-    pyfmosaic.pyfalign(inlist, method)
+    pyfalign(inlist, method)
 
 # End (pyfalign PyRAF interface routine)
 

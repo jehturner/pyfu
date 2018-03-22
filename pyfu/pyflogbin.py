@@ -8,11 +8,9 @@
 import numpy
 import scipy.ndimage.interpolation as ndi
 import astropy.io.fits as pyfits
-import astro_ds
 
-import cProfile, pstats, sys
+from . import astro_ds
 
-reload(astro_ds)
 
 # Pyflogbin main routine (non-PyRAF interface):
 def pyflogbin(inimage, outimage, fluxcons=False, propvar=False):

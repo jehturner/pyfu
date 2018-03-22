@@ -10,7 +10,7 @@ well used with output from gfcube in the Gemini IRAF package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.9 of the PyFU 3D data manipulation package was contributed by James Turner
+0.10 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -29,17 +29,17 @@ Installation
 ------------
 
 Change to the parent directory in which you want to put PyFU's source directory
-and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.9/ do:
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.10/ do:
 
   cd
-  tar zxf pyfu-0.9.tar.gz
+  tar zxf pyfu-0.10.tar.gz
 
 PyRAF
 
   To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
   (then skip to "Usage"):
 
-    reset pyfu = "/where/you/put/it/pyfu-0.9/pyfu/"  # need trailing slash!
+    reset pyfu = "/where/you/put/it/pyfu-0.10/pyfu/"  # need trailing slash!
     task pyfu.pkg = pyfu$pyfu.cl
 
   You can also install it into Python as detailed below and adapt the above
@@ -61,7 +61,7 @@ Python (including use with NDMapper)
   Use "which python" to check that you are finding python in the expected
   place, then install the package in the usual way:
 
-    cd pyfu-0.9/
+    cd pyfu-0.10/
     python setup.py install
 
   Then do "import pyfu" in Python. This (and the GMOS IRAF package) can
@@ -228,6 +228,11 @@ limited) until nddata & generalized WCS do everything we want.
 Changes
 -------
 
+0.10
+
+o Python 3 compatibility changes. Previous versions only work with Python 2.
+
+
 0.9
 
 o Restructure slightly & add a setup.py, for direct use as a Python module
@@ -253,8 +258,8 @@ Acknowledgements
 
 Supported by the Gemini Observatory, which is operated by the Association of
 Universities for Research in Astronomy, Inc., on behalf of the international
-Gemini partnership of Argentina, Australia, Brazil, Canada, Chile, and the
-United States of America.
+Gemini partnership of Argentina, Brazil, Canada, Chile, and the United
+States of America.
 
 This research made use of Astropy, a community-developed core Python package
 for Astronomy (Astropy Collaboration, 2013). See http://www.astropy.org.
@@ -268,5 +273,5 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, October 2016.
+James, March 2018.
 

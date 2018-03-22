@@ -58,11 +58,11 @@ def irafglob(inlist, matchfits=False, onfail=None, atfile=None):
                     raise IOError('cannot open \'%s\'' % inlist)
             elif onfail=='warning':
                 if not '*' in inlist and not '?' in inlist:
-                    print 'Warning: cannot open \'%s\'' % inlist
+                    print('Warning: cannot open \'%s\'' % inlist)
             elif onfail=='allerror':
                 raise IOError('cannot open \'%s\'' % inlist)
             elif onfail=='allwarning':
-                print 'Warning: cannot open \'%s\'' % inlist
+                print('Warning: cannot open \'%s\'' % inlist)
             
     return flist
 

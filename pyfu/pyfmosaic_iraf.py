@@ -8,7 +8,8 @@
 
 from pyraf import iraf
 
-from pyfu import pyfmosaic, irafglob_jt, astro_ds
+from pyfu.pyfmosaic import pyfmosaic, pyfalign
+from pyfu import irafglob_jt, astro_ds
 
 
 # Pyfmosaic PyRAF interface:
@@ -35,7 +36,7 @@ def pyfmosaic_iraf(inimages, outimage, posangle, separate, var):
 
 
 # Pyfalign PyRAF interface:
-def pyfalign_iraf(images, method):
+def pyfalign_iraf(images, method, llimit):
 
     # Convert inimages string to a Python list of filenames using a
     # modified version of STScI irafglob that returns an error when any
@@ -45,7 +46,7 @@ def pyfalign_iraf(images, method):
         raise IOError('no files matching \'%s\'' % images)
 
     # Call the main Python routine:
-    pyfalign(inlist, method)
+    pyfalign(inlist, method, llimit)
 
 # End (pyfalign PyRAF interface routine)
 

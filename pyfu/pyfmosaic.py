@@ -135,7 +135,7 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
 
 # Pyfalign main routine (non-PyRAF interface):
 #
-def pyfalign(images, method):
+def pyfalign(images, method, llimit):
     """
     Spatially align the (linear) WCSs of overlapping IFU datacubes onto a
     common system, based on registration of their image features.
@@ -158,6 +158,14 @@ def pyfalign(images, method):
         registering well-sampled cubes as long as they don't pick up spurious
         sources (so cosmic rays should be removed beforehand).
 
+    llimit : int
+        Lower pixel limit for the section of the cube to collapse to
+        create an image.  (used for centroid or correlation)  This is useful
+        for example when the blue end is very noisy and one wants to limit the
+        image reconstruction to the good signal part of the cube and doing so
+        avoid noise spike that would trip the centroid.
+
+
     """
 
     known_methods=['centroid', 'correlate']
@@ -174,7 +182,7 @@ def pyfalign(images, method):
 
     # Measure a list of offsets from the list of input datasets and
     # update their WCS offset accordingly:
-    AdjOffsets(dslist, method)
+    AdjOffsets(dslist, method, llimit)
 
     # Update each input HDUList with the corresponding modified DataSet:
     for hdulist, ds in zip(meflist, dslist):
@@ -187,7 +195,7 @@ def pyfalign(images, method):
 
 
 # Function to derive spatial offsets for a list of datacube arrays:
-def AdjOffsets(dslist, method='centroid'):
+def AdjOffsets(dslist, method='centroid', llimit=0):
     """Measure spatial offsets for a list of >=2D datasets and adjust
        their WCS parameters to put them all on the same co-ordinates"""
 
@@ -196,7 +204,7 @@ def AdjOffsets(dslist, method='centroid'):
 
         # Get an image summed over wavelength and nominally transformed to
         # the co-ordinate system of the first DataSet:
-        image = dataset.GetTelImage(match=dslist[0])
+        image = dataset.GetTelImage(match=dslist[0], llimit=llimit)
 
         if method=='centroid':
 

@@ -21,7 +21,7 @@ from stsci import imagestats
 import astropy.io.fits as pyfits
 import astropy.convolution as acnv
 
-from . import astro_ds
+from pyfu import astro_ds
 
 
 # Pyfmosaic main routine (non-PyRAF interface):

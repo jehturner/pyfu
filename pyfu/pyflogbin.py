@@ -9,7 +9,7 @@ import numpy
 import scipy.ndimage.interpolation as ndi
 import astropy.io.fits as pyfits
 
-from . import astro_ds
+from pyfu import astro_ds
 
 
 # Pyflogbin main routine (non-PyRAF interface):

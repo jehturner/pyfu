@@ -14,6 +14,7 @@
 #              Aug, 2016  JT Add setup.py etc. for direct use as Python module
 #              Oct, 2016  JT NumPy 1.10 compatibility & use astropy.io.fits
 #              Mar, 2018  JT Python 3 compatibility
+#              Jun, 2018  KL Add lower pixel limit in wavelength for pyfalign
 
 import numpy
 from scipy import ndimage

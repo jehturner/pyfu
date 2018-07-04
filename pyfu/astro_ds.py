@@ -6,6 +6,7 @@
 # Version      Apr, 2014  JT Variance support
 # Version      Oct, 2016  JT Use astropy.io.fits instead of pyfits
 # Version      Mar, 2018  JT Python 3 compatibility
+# Version      Jun, 2018  KL Add lower pix limit in wavelength for GetTelImage
 #
 # See the accompanying file LICENSE for conditions on copying.
 #

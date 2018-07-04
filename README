@@ -21,8 +21,7 @@ The following dependencies are required to use pyfu:
     NumPy, SciPy, STScI Python, AstroPy  (some recent version)
 
 The easiest way to get these is to install AstroConda as described at
-http://astroconda.readthedocs.io (not yet tested), or download Ureka >=1.0
-from http://ssb.stsci.edu/ureka.
+http://astroconda.readthedocs.io and http://www.gemini.edu/node/11823.
 
 
 Installation
@@ -101,6 +100,10 @@ The mosaicking procedure has 2 steps:
          one at tenth-of-a-pixel resolution. These algorithms are a bit rough
          and ready but are good enough for registering well-sampled cubes as
          long as they don't pick up spurious sources...
+
+       - The llimit option can be used to exclude wavelength planes towards
+         the blue end (which can be quite noisy for GMOS) from the summation.
+         An hlimit option may be added later, as needed.
 
      - You don't have to use pyfalign at all. If your WCS values already take
        pointing differences into account accurately (unlikely), you can just
@@ -213,7 +216,7 @@ o The spline interpolation used here (from scipy.ndimage) is suitable for
 Plans
 -----
 
-This code is built on an 8-year-old experimental data access class/module that
+This code is built on a decade-old experimental data access class/module that
 was my first significant venture into Python. The latter includes some pretty
 useful code for manipulating simple WCS but it's also a bit incomplete/quirky
 and lacking in documentation. Today, by far the most promising direction for
@@ -229,6 +232,9 @@ Changes
 -------
 
 0.10
+
+o Add pyfalign option to specify a lower pixel limit when integrating over
+  wavelength to produce an image for centring (from Kathleen Labrie).
 
 o Python 3 compatibility changes. Previous versions only work with Python 2.
 
@@ -273,5 +279,5 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, March 2018.
+James, July 2018.
 

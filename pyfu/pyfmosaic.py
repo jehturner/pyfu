@@ -136,7 +136,7 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
 
 # Pyfalign main routine (non-PyRAF interface):
 #
-def pyfalign(images, method, llimit):
+def pyfalign(images, method, llimit=None, hlimit=None):
     """
     Spatially align the (linear) WCSs of overlapping IFU datacubes onto a
     common system, based on registration of their image features.
@@ -159,13 +159,13 @@ def pyfalign(images, method, llimit):
         registering well-sampled cubes as long as they don't pick up spurious
         sources (so cosmic rays should be removed beforehand).
 
-    llimit : int
-        Lower pixel limit for the section of the cube to collapse to
-        create an image.  (used for centroid or correlation)  This is useful
+    llimit, hlimit : int, optional
+        Lower & upper pixel limits for the section of the cube to collapse to
+        create an image (used for centroid or correlation). This is useful
         for example when the blue end is very noisy and one wants to limit the
         image reconstruction to the good signal part of the cube and doing so
-        avoid noise spike that would trip the centroid.
-
+        avoids noise spikes that would trip the centroid. The defaults of None
+        use the entire wavelength range.
 
     """
 
@@ -183,7 +183,7 @@ def pyfalign(images, method, llimit):
 
     # Measure a list of offsets from the list of input datasets and
     # update their WCS offset accordingly:
-    AdjOffsets(dslist, method, llimit)
+    AdjOffsets(dslist, method, llimit=llimit, hlimit=hlimit)
 
     # Update each input HDUList with the corresponding modified DataSet:
     for hdulist, ds in zip(meflist, dslist):
@@ -196,7 +196,7 @@ def pyfalign(images, method, llimit):
 
 
 # Function to derive spatial offsets for a list of datacube arrays:
-def AdjOffsets(dslist, method='centroid', llimit=0):
+def AdjOffsets(dslist, method='centroid', llimit=None, hlimit=None):
     """Measure spatial offsets for a list of >=2D datasets and adjust
        their WCS parameters to put them all on the same co-ordinates"""
 
@@ -205,7 +205,8 @@ def AdjOffsets(dslist, method='centroid', llimit=0):
 
         # Get an image summed over wavelength and nominally transformed to
         # the co-ordinate system of the first DataSet:
-        image = dataset.GetTelImage(match=dslist[0], llimit=llimit)
+        image = dataset.GetTelImage(match=dslist[0],
+                                    llimit=llimit, hlimit=hlimit)
 
         if method=='centroid':
 

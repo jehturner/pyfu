@@ -1,6 +1,7 @@
 images,s,l,,,,"List of x,y,lambda datacubes to co-align"
 method,s,h,"centroid","centroid|correlate",,"Offset alignment method?"
-llimit,i,h,0,,,'Lower wavelength axis limit for centering.'
+llimit,i,h,INDEF,1,,'Lower wavelength axis limit for centering.'
+hlimit,i,h,INDEF,1,,'Upper wavelength axis limit for centering.'
 #cenmethod,s,h,"centroid","centroid|correlate|wcs|headeroff",,\
 #  "Offset alignment method?"
 #rotmethod,s,h,"headerpa","headerpa|wcs",,\

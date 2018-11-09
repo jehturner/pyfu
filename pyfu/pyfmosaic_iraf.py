@@ -36,7 +36,7 @@ def pyfmosaic_iraf(inimages, outimage, posangle, separate, var):
 
 
 # Pyfalign PyRAF interface:
-def pyfalign_iraf(images, method, llimit):
+def pyfalign_iraf(images, method, llimit, hlimit):
 
     # Convert inimages string to a Python list of filenames using a
     # modified version of STScI irafglob that returns an error when any
@@ -45,8 +45,18 @@ def pyfalign_iraf(images, method, llimit):
     if len(inlist)==0:
         raise IOError('no files matching \'%s\'' % images)
 
+    # Convert limit args to Python convention:
+    if llimit == iraf.INDEF:
+        llimit = None
+    else:
+        llimit -= 1
+    if hlimit == iraf.INDEF:
+        hlimit = None
+    else:
+        hlimit -= 1
+
     # Call the main Python routine:
-    pyfalign(inlist, method, llimit)
+    pyfalign(inlist, method, llimit, hlimit)
 
 # End (pyfalign PyRAF interface routine)
 

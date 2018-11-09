@@ -494,14 +494,21 @@ class DataSet:
     # Method to get a 2D image by summing the DataSet's data array over
     # any higher dimensions. If the 'match' parameter specifies a reference
     # DataSet, the output image is transformed to its co-ordinate system.
-    def GetTelImage(self, match=None, llimit=0):
+    def GetTelImage(self, match=None, llimit=None, hlimit=None):
+
+        # NEED TO FIX LIMITS TO A CONSISTENT SYSTEM (WAVELENGTH)?
+
+        if llimit is None:
+            llimit = 0
+        if hlimit is None:
+            hlimit = self.shape[0]  # for now assume lambda is dim 0 as below
 
         # Would be useful to add a check that self and match contain CD
         # matrices of the correct form (rank), to catch programming errors
 
         # Collapse the array down to a 2D image, assuming the last 2
         # dimensions (ie. the first 2 in IRAF/FITS) are spatial axes:
-        image = numpy.mean(self.GetData()[llimit:], axis=0, dtype=None,
+        image = numpy.mean(self.GetData()[llimit:hlimit], axis=0, dtype=None,
                            keepdims=False)
 
         # If there is a reference dataset, transform image accordingly:

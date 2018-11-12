@@ -136,7 +136,7 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
 
 # Pyfalign main routine (non-PyRAF interface):
 #
-def pyfalign(images, method, llimit=None, hlimit=None):
+def pyfalign(images, method, llimit=None, lwlen=None, hwlen=None):
     """
     Spatially align the (linear) WCSs of overlapping IFU datacubes onto a
     common system, based on registration of their image features.
@@ -159,13 +159,21 @@ def pyfalign(images, method, llimit=None, hlimit=None):
         registering well-sampled cubes as long as they don't pick up spurious
         sources (so cosmic rays should be removed beforehand).
 
-    llimit, hlimit : int, optional
-        Lower & upper pixel limits for the section of the cube to collapse to
-        create an image (used for centroid or correlation). This is useful
-        for example when the blue end is very noisy and one wants to limit the
-        image reconstruction to the good signal part of the cube and doing so
-        avoids noise spikes that would trip the centroid. The defaults of None
-        use the entire wavelength range.
+    llimit: int or None, optional
+        Lower pixel limit for the section of the cube to collapse to create an
+        image (used for centroid or correlation). This is useful when the blue
+        end is very noisy and one wants to limit the image reconstruction to
+        the good signal part of the cube and doing so avoids noise spikes that
+        would trip the centroid. The defaults of None uses the entire
+        wavelength range (lwlen-hwlen, if specified). For selecting particular
+        spectral feature(s), use lwlen-hwlen instead.
+
+    lwlen, hwlen: float or None, optional
+        Wavelength limits (in the same units as the header WCS) between which
+        to reconstruct a collapsed image for each cube. With the defaults of
+        None, the full extent of the wavelength axis in each direction is used
+        (or llimit, if applicable), which is also what happens if a specified
+        value falls beyond the range of the input data.
 
     """
 
@@ -183,7 +191,7 @@ def pyfalign(images, method, llimit=None, hlimit=None):
 
     # Measure a list of offsets from the list of input datasets and
     # update their WCS offset accordingly:
-    AdjOffsets(dslist, method, llimit=llimit, hlimit=hlimit)
+    AdjOffsets(dslist, method, llimit=llimit, lwlen=lwlen, hwlen=hwlen)
 
     # Update each input HDUList with the corresponding modified DataSet:
     for hdulist, ds in zip(meflist, dslist):
@@ -196,7 +204,7 @@ def pyfalign(images, method, llimit=None, hlimit=None):
 
 
 # Function to derive spatial offsets for a list of datacube arrays:
-def AdjOffsets(dslist, method='centroid', llimit=None, hlimit=None):
+def AdjOffsets(dslist, method='centroid', llimit=None, lwlen=None, hwlen=None):
     """Measure spatial offsets for a list of >=2D datasets and adjust
        their WCS parameters to put them all on the same co-ordinates"""
 
@@ -206,7 +214,7 @@ def AdjOffsets(dslist, method='centroid', llimit=None, hlimit=None):
         # Get an image summed over wavelength and nominally transformed to
         # the co-ordinate system of the first DataSet:
         image = dataset.GetTelImage(match=dslist[0],
-                                    llimit=llimit, hlimit=hlimit)
+                                    llimit=llimit, lwlen=lwlen, hwlen=hwlen)
 
         if method=='centroid':
 

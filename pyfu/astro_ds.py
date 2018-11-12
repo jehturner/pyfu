@@ -494,21 +494,35 @@ class DataSet:
     # Method to get a 2D image by summing the DataSet's data array over
     # any higher dimensions. If the 'match' parameter specifies a reference
     # DataSet, the output image is transformed to its co-ordinate system.
-    def GetTelImage(self, match=None, llimit=None, hlimit=None):
+    def GetTelImage(self, match=None, llimit=None, lwlen=None, hwlen=None):
 
-        # NEED TO FIX LIMITS TO A CONSISTENT SYSTEM (WAVELENGTH)?
-
-        if llimit is None:
+        if llimit is None or llimit < 0:
             llimit = 0
-        if hlimit is None:
-            hlimit = self.shape[0]  # for now assume lambda is dim 0 as below
+
+        hlimit = self.shape[0]
+
+        # For now set limits assuming lambda is dim 0 (& orthogonal) as below:
+        if lwlen is None:
+            lpix = llimit
+        else:
+            lpix = int(round(self.TransformFromWCS((lwlen, 0., 0.))[0]))
+            lpix = max(llimit, lpix)
+
+        if hwlen is None:
+            hpix = hlimit
+        else:
+            hpix = int(round(self.TransformFromWCS((hwlen, 0., 0.))[0])) + 1
+            hpix = min(hlimit, hpix)
+
+        if hpix <= lpix:
+            raise ValueError('hwlen < lwlen or llimit')
 
         # Would be useful to add a check that self and match contain CD
         # matrices of the correct form (rank), to catch programming errors
 
         # Collapse the array down to a 2D image, assuming the last 2
         # dimensions (ie. the first 2 in IRAF/FITS) are spatial axes:
-        image = numpy.mean(self.GetData()[llimit:hlimit], axis=0, dtype=None,
+        image = numpy.mean(self.GetData()[lpix:hpix], axis=0, dtype=None,
                            keepdims=False)
 
         # If there is a reference dataset, transform image accordingly:

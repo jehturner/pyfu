@@ -387,7 +387,8 @@ def AddCubes(dslist, outds, propvar=False):
 
         # Get array data from DataSet:
         cube = dataset.GetData()
-        gooddq = 1-dataset.GetDQ()  # Added 2010
+        gooddq = numpy.where(dataset.GetDQ() == 0,
+                             numpy.uint8(1), numpy.uint8(0))
         if propvar: varcube = dataset.GetVar()
 
         # print('ref count is ', sys.getrefcount(cube))
@@ -416,6 +417,7 @@ def AddCubes(dslist, outds, propvar=False):
 
         # Added 2010 to use input DQ now that gfcube is correcting
         # atmospheric dispersion and propagating DQ for the blank edges.
+        # This is a linear approximation that seems to work quite well.
         if coadd:
             trdq = ndimage.affine_transform(gooddq, trmatrix, troffset,
                    order=1, mode='constant', cval=numpy.nan,
@@ -450,7 +452,7 @@ def AddCubes(dslist, outds, propvar=False):
     # End (loop over input datasets)
 
     # Save the output mask:
-    #outDQ += outmask
+    #outDQ += outmask.astype(numpy.int16)
 
     if coadd:
 

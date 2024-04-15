@@ -1,0 +1,13 @@
+images,s,l,,,,"List of x,y,lambda datacubes to co-align"
+method,s,h,"centroid","centroid|correlate",,"Offset alignment method?"
+llimit,i,h,INDEF,1,,"Lower wavelength axis pixel limit for centring."
+lwlen,r,h,INDEF,0.,,"Lower wavelength limit for centring."
+hwlen,r,h,INDEF,0.,,"Upper wavelength limit for centring."
+#cenmethod,s,h,"centroid","centroid|correlate|wcs|headeroff",,\
+#  "Offset alignment method?"
+#rotmethod,s,h,"headerpa","headerpa|wcs",,\
+#  "Rotation alignment method?"
+#rotsense,s,h,"counter","counter|clockwise",,\
+#  "Sense of rotation when using header PAs?"
+#cenfirst,i,h,INDEF,1,,"First img plane for centring (INDEF=first/DQ)"
+#cenlast,i,h,INDEF,1,,"Last img plane for centring (INDEF=last/DQ)"

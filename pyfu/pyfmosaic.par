@@ -1,0 +1,5 @@
+inimages,s,l,,,,"List of x,y,lambda datacubes to co-add"
+outimage,s,l,,,,"Output datacube"
+posangle,r,h,INDEF,-180.,180.,"Output position angle (INDEF=auto)"
+separate,b,h,"no",,,"Separate the output cubes for inspection?"
+var,b,h,"no",,,"Propagate variance arrays to the output?"

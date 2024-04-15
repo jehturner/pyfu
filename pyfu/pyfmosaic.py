@@ -1,7 +1,7 @@
-# Copyright(c) 2006-2018 Association of Universities for Research in Astronomy, Inc.,
+# Copyright(c) 2006-2023 Association of Universities for Research in Astronomy, Inc.,
 # by James E.H. Turner.
 #
-# 'pyfmosaic' main Python module for mosaicing IFU datacubes
+# 'pyfmosaic' main Python module for mosaicking IFU datacubes
 #
 # Version  Feb-May, 2006  JT Initial test version
 #              May, 2011  JT Version with basic support for input DQ
@@ -15,10 +15,12 @@
 #              Oct, 2016  JT NumPy 1.10 compatibility & use astropy.io.fits
 #              Mar, 2018  JT Python 3 compatibility
 #              Jun, 2018  KL Add lower pixel limit in wavelength for pyfalign
+#              Sep, 2023  JT Replace old stsci.imagestats with astropy.stats
+#                            & numpy; don't fail on non-compliant FITS headers
 
 import numpy
 from scipy import ndimage
-from stsci import imagestats
+from astropy import stats
 import astropy.io.fits as pyfits
 import astropy.convolution as acnv
 
@@ -77,7 +79,7 @@ def pyfmosaic(inimages, outimage, posangle=None, separate=False, propvar=False):
     # outhdulist = pyfits.HDUList(outphu) # old: now re-open instead
 
     # Save the PHU to disk, to ensure the file is writeable:
-    outphu.writeto(outimage)
+    outphu.writeto(outimage, output_verify="warn")
     del outphu
 
     # Re-open the minimal output image for appending:
@@ -268,8 +270,11 @@ def ImagePeakCen(image):
     # This is just a fairly quick-and-dirty algorithm for now
 
     # Detect all sources at >2*sigma in the image:
-    bgstats = imagestats.ImageStats(image,nclip=3,lsig=3.0,usig=2.0)
-    imgmask = image >= bgstats.mean + 2*bgstats.stddev
+    bgarr, lower, upper = stats.sigma_clip(
+        image, sigma_lower=3.0, sigma_upper=2.0, maxiters=3, return_bounds=True
+    )
+    bgmean = bgarr.mean()
+    imgmask = image > upper
     src_labels, src_num = ndimage.label(imgmask)
 
     # Identify the label corresponding to the brightest source:
@@ -277,8 +282,8 @@ def ImagePeakCen(image):
     maxsource = numpy.argmax(peaks)+1   # peaks has maxima for labels 1 onwards
 
     # Centroid on the area of the source > half-max:
-    peaksize = peaks[maxsource-1]-bgstats.mean
-    src_labels = (image >= bgstats.mean + 0.5*peaksize) * src_labels
+    peaksize = peaks[maxsource-1]-bgmean
+    src_labels = (image >= bgmean + 0.5*peaksize) * src_labels
     objcen = ndimage.center_of_mass(image, numpy.float32(src_labels),
                maxsource)  # Why does src_labels need converting to float?
                            # (needed when porting to Numpy)
@@ -300,10 +305,8 @@ def ImageCorrelationShifts(image1, image2):
 
     # Make a copy of each image with the mean subtracted, to avoid any
     # artificial cross-correlation peak at 0,0.
-    mean1 = imagestats.ImageStats(image1, nclip=0).mean
-    mean2 = imagestats.ImageStats(image2, nclip=0).mean
-    image1 = image1 - mean1
-    image2 = image2 - mean2
+    image1 = image1 - image1.mean()
+    image2 = image2 - image2.mean()
 
     # Upsample each image by x10 along each axis, to get 0.1 pixel precision
     # from the discrete cross-correlation without fitting the peak:

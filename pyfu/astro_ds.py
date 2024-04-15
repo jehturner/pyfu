@@ -15,7 +15,7 @@ A module for high-level manipulation of astronomical datasets (especially
 IFU data and Gemini-style MEF files) with STScI's numpy and PyFITS
 (likely to be replaced at some point by Gemini AstroData & AstroPy nddata)
 """
-import math, string
+import math, string, sys
 import numpy, numpy.linalg
 import astropy.io.fits as pyfits
 from . import pyfu_transform
@@ -177,10 +177,15 @@ class DataSet:
                     self.dispaxis = wdim
                 else:
                     raise ValueError('_ReadHdr(): multiple wavelength axes')
+        if self.dispaxis is None:
+            sys.stderr.write('WARNING: no spectral axis type in header; '
+                             'defaulting to outermost axis\n')
+            self.dispaxis = 0
+            self.ctype[self.dispaxis] = FITSCType('AWAV')
 
         # Should we return a warning if any of the defaults were used
         # because keywords could not be found?
-        
+
     # End (private method to read existing FITS header)
 
 
@@ -325,7 +330,7 @@ class DataSet:
 
     # Define a warning string for missing header keywords:
     def _key_warning(self, keyword, imname, default):
-        warning = 'Warning: no \''+str(keyword)+'\' in '+ \
+        warning = 'WARNING: no \''+str(keyword)+'\' in '+ \
             str(imname)+': using value '+str(default)
         return warning
     # End (warning string method)

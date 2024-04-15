@@ -6,7 +6,8 @@ spectral co-ordinate along the third array axis, as with Gemini data. The cubes
 must already have linear FITS World co-ordinate systems.
 
 This is not tested as extensively as the official Gemini packages but has been
-well used with output from gfcube in the Gemini IRAF package.
+well used with output from gfcube (and more recently nfcube) in the Gemini IRAF
+package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
@@ -18,14 +19,15 @@ Requirements
 ------------
 
 The following dependencies are required to use pyfu:
-    NumPy, SciPy, STScI Python, AstroPy  (some recent version)
+    NumPy, SciPy, AstroPy >=3.1
 
-The easiest way to get these is to install AstroConda as described at
-http://astroconda.readthedocs.io and http://www.gemini.edu/node/11823.
+The easiest way to get these is to install "pyfu" from Gemini's public conda
+channel and conda-forge, as described (for DRAGONS and Gemini IRAF) at:
+https://www.gemini.edu/observing/phase-iii/reducing-data/dragons-data-reduction-software
 
 
-Installation
-------------
+Installation from source  (prefer conda installation instead, as above)
+------------------------
 
 Change to the parent directory in which you want to put PyFU's source directory
 and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.11/ do:
@@ -50,10 +52,10 @@ Python (including use with NDMapper)
 
     For Anaconda:
 
-      conda create -n pyfu_env iraf pyraf stsci   (or similar)
-      source activate pyfu_env
+      conda create -n pyfu_env iraf pyraf   (or similar, IRAF optional)
+      conda activate pyfu_env
 
-    For Ureka:
+    For Ureka (very old):
 
       ur_setup -n pyfu_variant
 
@@ -190,8 +192,8 @@ Other notes & limitations
 o The expected data format is somewhat Gemini-centric (see introduction).
 
 o Specifying a rotation for the output cube (WRT the input) currently produces
-  incorrect output, due to some bug that I haven't had time to fix; you should
-  therefore leave pyfmosaic's posangle parameter set to the default.
+  incorrect output, due to some regression that I haven't had time to fix; you
+  should therefore leave pyfmosaic's posangle parameter set to the default.
 
 o This version doesn't do any bad pixel rejection. You should clean up your
   data by the time you generate the input cubes or specify separate=yes and
@@ -201,8 +203,6 @@ o This version doesn't do any bad pixel rejection. You should clean up your
   any further effort will be better invested in AstroPy tools (see Plans).
 
 o Pyfalign doesn't work reliably in the presence of uncorrected cosmic rays.
-  The cross-correlation option (method="correlate") hasn't been heavily tested
-  but worked well with the couple of datasets I've tried.
 
 o I'll probably build a log-rebinning option directly into pyfmosaic to avoid
   the extra step but haven't got around to it yet.
@@ -216,16 +216,15 @@ o The spline interpolation used here (from scipy.ndimage) is suitable for
 Plans
 -----
 
-This code is built on a decade-old experimental data access class/module that
-was my first significant venture into Python. The latter includes some pretty
+This code is built on a >1 decade-old experimental data access class/module
+that was my first significant venture into Python. The latter includes some
 useful code for manipulating simple WCS but it's also a bit incomplete/quirky
-and lacking in documentation. Today, by far the most promising direction for
-further development is to contribute to AstroPy's nddata class (see
-http://www.astropy.org) and its planned "generalized WCS" code, eventually
-rebuilding the functionality provided here on top of that. I therefore don't
-intend to support my libraries for developing other applications but I'm open
-to improving their functionality judiciously (my available time being very
-limited) until nddata & generalized WCS do everything we want.
+and lacking in documentation. Today, it would make more sense to start with
+Gemini's astrodata class, on top of AstroPy's nddata and gwcs (or possibly
+SunPy's ndcube). Eventually the functionality provided here should be rebuilt
+on top of those things. I therefore don't intend to support my libraries for
+developing other applications but I'm open to minor improvements in
+functionality (my available time being very limited) in the meantime.
 
 
 Changes
@@ -233,7 +232,14 @@ Changes
 
 0.11
 
-o No changes to date.
+o Replace old stsci.imagestats dependency with astropy.stats & numpy, to
+  support Python 3.8+.
+
+o Issue warnings rather than failing when (re-)writing non-compliant headers.
+
+o If no wavelength axis CTYPE is found in the headers, assume it's the
+  outermost (last FITS) axis by default, rather than failing with an obscure
+  indexing error. 
 
 
 0.10
@@ -284,5 +290,4 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, July 2018.
-
+James, September 2023.

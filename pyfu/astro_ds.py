@@ -1324,7 +1324,7 @@ class PixMapper:
 
         # Construct index to the relevant co-ordinate vector in the cache
         # and return the looked-up values:
-        cacheidx = [self._dimidx] + list(coords)
+        cacheidx = (self._dimidx,) + tuple(coords)
         return tuple(cachearr[cacheidx])
 
     def _transform(self, coords, invert=False):

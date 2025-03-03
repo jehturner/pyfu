@@ -9,5 +9,11 @@ setup(name='PyFU',
       author_email='jturner@gemini.edu',
       packages=['pyfu'],
       license='BSD',
+      install_requires=[
+          'astropy>=3.1',
+          'numpy>=1.9,<2',
+          'scipy>=0.14',
+      ],
+      python_requires='>=3.6',
 )
 

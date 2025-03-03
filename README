@@ -11,7 +11,7 @@ package.
 
 If you find this work useful, please consider mentioning it in the
 acknowledgements or data reduction section of your publication (eg. Version
-0.11 of the PyFU 3D data manipulation package was contributed by James Turner
+0.12 of the PyFU 3D data manipulation package was contributed by James Turner
 through the Gemini Data Reduction User Forum.").
 
 
@@ -30,17 +30,17 @@ Installation from source  (prefer conda installation instead, as above)
 ------------------------
 
 Change to the parent directory in which you want to put PyFU's source directory
-and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.11/ do:
+and unpack the contents of the tar file, eg. to put it in ~/pyfu-0.12/ do:
 
   cd
-  tar zxf pyfu-0.11.tar.gz
+  tar zxf pyfu-0.12.tar.gz
 
 PyRAF
 
   To use the PyRAF interface, set it up in your IRAF loginuser.cl like so
   (then skip to "Usage"):
 
-    reset pyfu = "/where/you/put/it/pyfu-0.11/pyfu/"  # need trailing slash!
+    reset pyfu = "/where/you/put/it/pyfu-0.12/pyfu/"  # need trailing slash!
     task pyfu.pkg = pyfu$pyfu.cl
 
   You can also install it into Python as detailed below and adapt the above
@@ -62,7 +62,7 @@ Python (including use with NDMapper)
   Use "which python" to check that you are finding python in the expected
   place, then install the package in the usual way:
 
-    cd pyfu-0.11/
+    cd pyfu-0.12/
     python setup.py install
 
   Then do "import pyfu" in Python. This (and the GMOS IRAF package) can
@@ -230,6 +230,12 @@ functionality (my available time being very limited) in the meantime.
 Changes
 -------
 
+0.12
+
+o Slice with a tuple rather than a list, which is deprecated in recent numpy
+  versions.
+
+
 0.11
 
 o Replace old stsci.imagestats dependency with astropy.stats & numpy, to
@@ -290,4 +296,4 @@ is built. In particular, Stefan van der Walt helpfully resolved an ndimage
 edge-artifact bug in 2007 that had been contaminating pyfmosaic results. 
 
 
-James, September 2023.
+James, March 2025.
